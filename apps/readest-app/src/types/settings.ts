@@ -139,6 +139,25 @@ export interface HardcoverSettings {
  */
 export type WebDAVBrowseSortByType = 'name' | 'modified' | 'created' | 'size';
 
+export type CrossPointDevice = 'X3' | 'X4';
+
+/**
+ * Connection details for a physical CrossPoint reader on the local network.
+ * This is a device bridge, not a cloud-sync provider: the entire block stays
+ * on this Readest installation and never changes the active cloud provider.
+ */
+export interface CrossPointSettings {
+  serverUrl: string;
+  username: string;
+  password: string;
+  /** Last device model confirmed by the reader's `/api/status` endpoint. */
+  device?: CrossPointDevice;
+  /** Reader serial reported by `/api/status`, when available. */
+  serial?: string;
+  /** Last successful device sync on this Readest installation. */
+  lastSyncedAt?: number;
+}
+
 export interface WebDAVSettings {
   enabled: boolean;
   serverUrl: string;
@@ -480,6 +499,7 @@ export interface SystemSettings {
   s3: S3Settings;
   onedrive: OneDriveSettings;
   icloud: ICloudSettings;
+  crosspoint: CrossPointSettings;
 
   aiSettings: AISettings;
   /**

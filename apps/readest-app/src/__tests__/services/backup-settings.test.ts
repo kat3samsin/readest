@@ -77,6 +77,14 @@ function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
       deviceId: 'gdrive-device-id',
       lastSyncedAt: 777,
     },
+    crosspoint: {
+      serverUrl: '192.168.0.154',
+      username: 'crosspoint',
+      password: 'device-password',
+      device: 'X4',
+      serial: 'reader-serial',
+      lastSyncedAt: 555,
+    },
     aiSettings: {
       enabled: true,
       provider: 'ollama',
@@ -118,6 +126,11 @@ describe('sanitizeSettingsForBackup - blacklist', () => {
     expect(rec(out['webdav'])['deviceId']).toBeUndefined();
     expect(rec(out['webdav'])['lastSyncedAt']).toBeUndefined();
     expect(rec(out['webdav'])['serverUrl']).toBe('https://dav.example');
+  });
+
+  it('strips the entire device-local CrossPoint block', () => {
+    const out = rec(sanitizeSettingsForBackup(makeSettings(), { includeCredentials: true }));
+    expect(out['crosspoint']).toBeUndefined();
   });
 
   it('strips sync cursors', () => {
@@ -250,6 +263,31 @@ describe('mergeRestoredSettings', () => {
     expect(merged.version).toBe(9);
     expect(merged.migrationVersion).toBe(7);
     expect(merged.replicaDeviceId).toBe('device-uuid-aaa');
+  });
+
+  it('preserves current CrossPoint settings even when a backup contains a stale block', () => {
+    const current = makeSettings({
+      crosspoint: {
+        serverUrl: '192.168.0.154',
+        username: 'crosspoint',
+        password: 'current-password',
+        device: 'X4',
+        serial: 'current-reader',
+        lastSyncedAt: 555,
+      },
+    });
+    const backup = {
+      crosspoint: {
+        serverUrl: '192.168.0.99',
+        username: 'stale',
+        password: 'stale-password',
+        device: 'X3',
+      },
+    } as Partial<SystemSettings>;
+
+    const merged = mergeRestoredSettings(current, backup);
+
+    expect(merged.crosspoint).toEqual(current.crosspoint);
   });
 
   it('deep-merges nested objects, keeping current-only nested keys', () => {

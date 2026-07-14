@@ -18,7 +18,7 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 
 use read_progress_stream::ReadProgressStream;
 
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use std::{collections::HashMap, sync::Arc};
 
 type Result<T> = std::result::Result<T, Error>;
@@ -333,13 +333,19 @@ pub async fn upload_file(
     method: &str,
     headers: HashMap<String, String>,
     on_progress: Channel<ProgressPayload>,
+    timeout_ms: Option<u64>,
 ) -> Result<String> {
     ensure_path_allowed(&app, file_path)?;
 
     let file = File::open(file_path).await?;
     let file_len = file.metadata().await.unwrap().len();
 
-    let client = reqwest::Client::new();
+    let mut client_builder = reqwest::ClientBuilder::new();
+    if let Some(timeout_ms) = timeout_ms.filter(|timeout_ms| *timeout_ms > 0) {
+        let timeout = Duration::from_millis(timeout_ms);
+        client_builder = client_builder.timeout(timeout).connect_timeout(timeout);
+    }
+    let client = client_builder.build()?;
     let mut request = match method.to_uppercase().as_str() {
         "POST" => client.post(url),
         "PUT" => client.put(url),

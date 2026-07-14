@@ -20,6 +20,7 @@ import { registerBookmarkPullDoc } from '../utils/bookmarkPullGesture';
 import BrightnessOverlay from './BrightnessOverlay';
 import { usePagination, viewPagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
+import { useCrossPointPendingProgress } from '../hooks/useCrossPointPendingProgress';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
@@ -138,6 +139,10 @@ const FoliateViewer: React.FC<{
   const viewSettings = getViewSettings(bookKey);
 
   const viewRef = useRef<FoliateView | null>(null);
+  // A ref assignment alone does not re-render, so hooks cannot subscribe to
+  // a newly-opened view from it. Keep this low-frequency lifecycle value in
+  // state while the ref remains the hot-path imperative handle.
+  const [liveView, setLiveView] = useState<FoliateView | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const isViewCreated = useRef(false);
   const doubleClickDisabled = useRef(!!viewSettings?.disableDoubleClick);
@@ -650,7 +655,7 @@ const FoliateViewer: React.FC<{
 
   useCapturedTurn(bookKey, viewRef);
 
-  useFoliateEvents(viewRef.current, {
+  useFoliateEvents(liveView, {
     onLoad: docLoadHandler,
     onStabilized: stabilizedHandler,
     onRelocate: progressRelocateHandler,
@@ -658,6 +663,10 @@ const FoliateViewer: React.FC<{
     onNavigateStart: navigateStartHandler,
     onNavigateEnd: navigateEndHandler,
   });
+  // Register after the standard relocate listener. A staged CrossPoint
+  // position must be acknowledged only after that listener has populated the
+  // actual renderer-derived config.
+  useCrossPointPendingProgress(bookKey, bookDoc, liveView);
 
   useEffect(() => {
     if (isViewCreated.current) return;
@@ -816,6 +825,9 @@ const FoliateViewer: React.FC<{
           overrideLocation,
         );
       }
+      // The initial location has settled; publish this view so event-driven
+      // integrations can safely initiate a deliberate second relocation.
+      setLiveView(view);
     };
 
     openBook();

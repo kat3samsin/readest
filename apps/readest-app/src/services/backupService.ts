@@ -40,6 +40,8 @@ export const BACKUP_SETTINGS_BLACKLIST = [
   'autoImportFolders',
   'autoImportFlattenFolders',
   'savedBookCoverForLockScreenPath',
+  // Physical reader connection, credentials, detection proof, and cursor.
+  'crosspoint',
   // Per-device identity — restoring causes sync identity / HLC collisions.
   'replicaDeviceId',
   'kosync.deviceId',
@@ -168,9 +170,13 @@ export function mergeRestoredSettings(
   current: SystemSettings,
   backup: Partial<SystemSettings>,
 ): SystemSettings {
+  // CrossPoint is wholly device-local. Ignore stale or hand-edited legacy
+  // backup blocks as well as omitting it from newly-created backups.
+  const restorable = { ...backup };
+  delete restorable.crosspoint;
   return deepMerge(
     current as unknown as Record<string, unknown>,
-    backup as unknown as Record<string, unknown>,
+    restorable as unknown as Record<string, unknown>,
   ) as unknown as SystemSettings;
 }
 
