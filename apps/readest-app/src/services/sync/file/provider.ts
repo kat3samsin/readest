@@ -77,8 +77,10 @@ export interface FileSyncProvider {
    * remote URL + auth. Resolves `true` on success, `false` on a swallowed
    * failure. Absent on backends without a streaming primitive (e.g. web);
    * the engine then falls back to buffered {@link writeBinary}.
+   * `timeoutMs` is an opt-in native request deadline. Providers that do not
+   * support it ignore the value, preserving their normal transfer behavior.
    */
-  uploadStream?(remotePath: string, localPath: string): Promise<boolean>;
+  uploadStream?(remotePath: string, localPath: string, timeoutMs?: number): Promise<boolean>;
   /**
    * Optional streaming download: GET `remotePath` straight to `localPath`.
    * Same ownership + fallback rules as {@link uploadStream}.

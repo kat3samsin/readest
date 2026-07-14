@@ -89,7 +89,7 @@ export const createWebDAVProvider = (settings: WebDAVSettings): FileSyncProvider
     const authHeaders = (): Record<string, string> => ({
       Authorization: buildBasicAuthHeader(settings.username, settings.password),
     });
-    provider.uploadStream = async (remotePath, localPath) => {
+    provider.uploadStream = async (remotePath, localPath, timeoutMs) => {
       const url = buildRequestUrl(settings.serverUrl, remotePath);
       try {
         // tauriUpload's TS type says Map, but the Rust command accepts a JSON
@@ -100,6 +100,7 @@ export const createWebDAVProvider = (settings: WebDAVSettings): FileSyncProvider
           'PUT',
           undefined,
           authHeaders() as unknown as Map<string, string>,
+          timeoutMs,
         );
         return true;
       } catch (e) {

@@ -14,6 +14,7 @@ import {
   RiDatabase2Line,
   RiGoogleLine,
   RiMicrosoftLine,
+  RiDeviceLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -38,6 +39,7 @@ import WebDAVForm from './integrations/WebDAVForm';
 import GoogleDriveForm from './integrations/GoogleDriveForm';
 import OneDriveForm from './integrations/OneDriveForm';
 import S3Form from './integrations/S3Form';
+import CrossPointForm from './integrations/CrossPointForm';
 import { persistActiveCloudProvider } from './integrations/cloudSync';
 import { getReadestCloudRowStatus, getThirdPartyRowStatus } from './integrations/cloudSyncStatus';
 import {
@@ -51,6 +53,7 @@ import { BoxedList, NavigationRow, SectionTitle, SettingLabel, Tips } from './pr
 
 type SubPage =
   | 'kosync'
+  | 'crosspoint'
   | 'webdav'
   | 'gdrive'
   | 's3'
@@ -99,6 +102,7 @@ const IntegrationsPanel: React.FC = () => {
   // back on. The `?? 'free'` keeps the (re-gated) loading state non-premium.
   const { userProfilePlan } = useQuotaStats();
   const isCloudSyncPremium = isCloudSyncAllowed(userProfilePlan ?? 'free');
+  const isDesktop = !!appService?.isDesktopApp;
 
   const [subPage, setSubPage] = useState<SubPage>(null);
 
@@ -130,6 +134,10 @@ const IntegrationsPanel: React.FC = () => {
   // stick to the next open. Recognised values match the SubPage union.
   useEffect(() => {
     if (!requestedSubPage) return;
+    if (requestedSubPage === 'crosspoint' && !isDesktop) {
+      setRequestedSubPage(null);
+      return;
+    }
     const isCloudRequest =
       requestedSubPage === 'webdav' ||
       requestedSubPage === 'gdrive' ||
@@ -145,6 +153,7 @@ const IntegrationsPanel: React.FC = () => {
     }
     if (
       requestedSubPage === 'kosync' ||
+      requestedSubPage === 'crosspoint' ||
       requestedSubPage === 'webdav' ||
       requestedSubPage === 'gdrive' ||
       requestedSubPage === 's3' ||
@@ -160,7 +169,7 @@ const IntegrationsPanel: React.FC = () => {
       setSubPage('gdrive');
     }
     setRequestedSubPage(null);
-  }, [requestedSubPage, setRequestedSubPage, isCloudSyncPremium, userProfilePlan]);
+  }, [requestedSubPage, setRequestedSubPage, isCloudSyncPremium, userProfilePlan, isDesktop]);
 
   // Sub-page wrapper matches the list-view's `my-4 w-full` so the
   // SubPageHeader's "Integrations" label lands at the exact same Y position
@@ -170,6 +179,12 @@ const IntegrationsPanel: React.FC = () => {
     return (
       <div className='my-4 w-full'>
         <KOSyncForm onBack={() => setSubPage(null)} />
+      </div>
+    );
+  if (subPage === 'crosspoint' && isDesktop)
+    return (
+      <div className='my-4 w-full'>
+        <CrossPointForm onBack={() => setSubPage(null)} />
       </div>
     );
   if (subPage === 'webdav')
@@ -367,6 +382,11 @@ const IntegrationsPanel: React.FC = () => {
 
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
+  const crosspointStatus = settings.crosspoint?.device
+    ? _('Connected to {{device}}', { device: settings.crosspoint.device })
+    : settings.crosspoint?.serverUrl
+      ? _('Ready to connect')
+      : _('Not connected');
 
   // Cloud sync providers are mutually exclusive: exactly one of
   // {Readest Cloud, WebDAV, Google Drive} owns library sync. A "configured"
@@ -464,6 +484,22 @@ const IntegrationsPanel: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {isDesktop && (
+        <div className='w-full' data-setting-id='settings.integrations.deviceSync'>
+          <SectionTitle className='mb-2'>{_('Device Sync')}</SectionTitle>
+          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
+            <div className='divide-base-200 divide-y'>
+              <IntegrationRow
+                icon={RiDeviceLine}
+                title={_('CrossPoint')}
+                status={crosspointStatus}
+                onClick={() => setSubPage('crosspoint')}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className='w-full' data-setting-id='settings.integrations.cloudSync'>
         <SectionTitle className='mb-2'>{_('Cloud Sync')}</SectionTitle>

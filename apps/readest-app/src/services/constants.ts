@@ -29,6 +29,7 @@ import {
   GoogleDriveSettings,
   S3Settings,
   OneDriveSettings,
+  CrossPointSettings,
 } from '@/types/settings';
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
@@ -142,6 +143,12 @@ export const DEFAULT_ONEDRIVE_SETTINGS = {
   lastSyncedAt: 0,
 } as OneDriveSettings;
 
+export const DEFAULT_CROSSPOINT_SETTINGS = {
+  serverUrl: '',
+  username: '',
+  password: '',
+} as CrossPointSettings;
+
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,
@@ -202,6 +209,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   googleDrive: DEFAULT_GOOGLE_DRIVE_SETTINGS,
   s3: DEFAULT_S3_SETTINGS,
   onedrive: DEFAULT_ONEDRIVE_SETTINGS,
+  crosspoint: DEFAULT_CROSSPOINT_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
 
   lastSyncedAtBooks: 0,

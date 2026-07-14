@@ -162,6 +162,7 @@ export const tauriUpload = async (
   method: UploadMethod,
   progressHandler?: ProgressHandler,
   headers?: Map<string, string>,
+  timeoutMs?: number,
 ): Promise<string> => {
   const ids = new Uint32Array(1);
   window.crypto.getRandomValues(ids);
@@ -179,6 +180,7 @@ export const tauriUpload = async (
     method,
     headers: headers ?? {},
     onProgress,
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
   });
 };
 
