@@ -6,6 +6,7 @@ import { partialMD5 } from '@/utils/md5';
 import type {
   CrossPointBookProvider,
   CrossPointBookStore,
+  CrossPointBookSyncProgress,
   CrossPointBookSyncResult,
   CrossPointLibraryManifest,
   CrossPointManifestEntry,
@@ -218,10 +219,12 @@ export const sendCrossPointBooks = async ({
   provider,
   store,
   books,
+  onProgress,
 }: {
   provider: CrossPointBookProvider;
   store: CrossPointBookStore;
   books: Book[];
+  onProgress?: (progress: CrossPointBookSyncProgress) => void;
 }): Promise<CrossPointBookSyncResult> => {
   const rootEntries = await provider.list('/');
   const inventory = rootInventory(rootEntries);
@@ -243,7 +246,8 @@ export const sendCrossPointBooks = async ({
   let skipped = 0;
   let unavailable = 0;
 
-  for (const book of activeEpubs) {
+  for (const [index, book] of activeEpubs.entries()) {
+    onProgress?.({ book, index, total: activeEpubs.length });
     try {
       let source = await resolveLocalSource(store, book);
       if (!source) {

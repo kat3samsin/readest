@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import type { Book } from '@/types/book';
@@ -209,6 +209,55 @@ describe('CrossPointForm', () => {
     expect(cloudSnapshot(useSettingsStore.getState().settings)).toBe(before);
     expect(persistActiveCloudProvider).not.toHaveBeenCalled();
     expect(await screen.findByText('1 book(s) synced to CrossPoint')).toBeTruthy();
+  });
+
+  test('shows the current book while a CrossPoint sync is running', async () => {
+    const configured = makeSettings();
+    configured.crosspoint = {
+      serverUrl: 'http://192.168.0.154',
+      username: '',
+      password: '',
+      device: 'X4',
+    };
+    useSettingsStore.setState({ settings: configured } as never);
+
+    let reportProgress!: (progress: { book: Book; index: number; total: number }) => void;
+    let finishSync!: () => void;
+    runCrossPointBookSync.mockImplementation(
+      (input) =>
+        new Promise((resolve) => {
+          reportProgress = input.onProgress;
+          finishSync = () =>
+            resolve({
+              ok: true,
+              code: 'SUCCESS',
+              status,
+              progress: { supported: false },
+              hydratedBookHashes: [],
+              books: {
+                manifest: { version: 1, books: {} },
+                considered: 3,
+                uploaded: 3,
+                recovered: 0,
+                skipped: 0,
+                unavailable: 0,
+                failures: [],
+              },
+            });
+        }),
+    );
+    render(<CrossPointForm onBack={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+
+    expect(await screen.findByText('Preparing CrossPoint sync…')).toBeTruthy();
+    act(() => reportProgress({ book, index: 1, total: 3 }));
+    expect(
+      await screen.findByText('Syncing book 2 of 3: Witchcraft for Wayward Girls'),
+    ).toBeTruthy();
+
+    await act(async () => finishSync());
+    expect(await screen.findByText('3 book(s) synced to CrossPoint')).toBeTruthy();
   });
 
   test('requires an explicit reconnect when the connected reader serial changes', async () => {

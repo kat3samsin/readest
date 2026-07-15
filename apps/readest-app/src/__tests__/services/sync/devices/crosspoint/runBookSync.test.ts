@@ -195,6 +195,7 @@ describe('runCrossPointBookSync', () => {
   test('uses WebDAV only as a root transport and updates only CrossPoint success metadata', async () => {
     const harness = makeHarness();
     const initial = settings();
+    const onProgress = vi.fn();
     useSettingsStore.setState({ settings: initial });
     const cloudBefore = JSON.stringify({
       webdav: initial.webdav,
@@ -209,6 +210,7 @@ describe('runCrossPointBookSync', () => {
         envConfig: harness.envConfig,
         settings: initial,
         books: harness.books,
+        onProgress,
         persistHydratedBookMarkers: harness.persistHydratedBookMarkers,
       },
       harness.dependencies,
@@ -236,6 +238,7 @@ describe('runCrossPointBookSync', () => {
       provider: harness.provider,
       store: expect.any(Object),
       books: harness.books,
+      onProgress,
     });
 
     expect(result).toMatchObject({

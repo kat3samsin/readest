@@ -1,3 +1,4 @@
+import type { Book } from '@/types/book';
 import type { LocalStore } from '@/services/sync/file/localStore';
 import type { FileSyncProvider } from '@/services/sync/file/provider';
 
@@ -28,6 +29,13 @@ export type CrossPointBookStore = Pick<
 export interface CrossPointBookSyncFailure {
   bookHash: string;
   reason: string;
+}
+
+export interface CrossPointBookSyncProgress {
+  book: Book;
+  /** Zero-based index of the active EPUB currently being processed. */
+  index: number;
+  total: number;
 }
 
 export interface CrossPointBookSyncResult {

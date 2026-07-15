@@ -16,6 +16,7 @@ import {
   type CrossPointBookRunResult,
 } from '@/services/sync/devices/crosspoint/runBookSync';
 import { persistCrossPointHydratedBookMarkers } from '@/services/sync/devices/crosspoint/libraryMarker';
+import type { CrossPointBookSyncProgress } from '@/services/sync/devices/crosspoint/types';
 import type { CrossPointSettings } from '@/types/settings';
 import SubPageHeader from '../SubPageHeader';
 import { BoxedList, SectionTitle, SettingsRow, Tips } from '../primitives';
@@ -112,6 +113,7 @@ const CrossPointForm: React.FC<CrossPointFormProps> = ({ onBack }) => {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<CrossPointBookSyncProgress | null>(null);
   const isDesktop = !!appService?.isDesktopApp;
 
   const header = (
@@ -201,6 +203,7 @@ const CrossPointForm: React.FC<CrossPointFormProps> = ({ onBack }) => {
   const handleSync = async () => {
     if (isSyncing) return;
     setIsSyncing(true);
+    setSyncProgress(null);
     setNotice(null);
     try {
       let { library, libraryLoaded } = useLibraryStore.getState();
@@ -214,6 +217,7 @@ const CrossPointForm: React.FC<CrossPointFormProps> = ({ onBack }) => {
         envConfig,
         settings: useSettingsStore.getState().settings,
         books: library,
+        onProgress: setSyncProgress,
         persistHydratedBookMarkers: (markers) =>
           persistCrossPointHydratedBookMarkers(envConfig, markers),
       });
@@ -223,6 +227,7 @@ const CrossPointForm: React.FC<CrossPointFormProps> = ({ onBack }) => {
       setNotice({ type: 'error', message: _('Book sync failed. Check the reader and try again.') });
     } finally {
       setIsSyncing(false);
+      setSyncProgress(null);
     }
   };
 
@@ -237,6 +242,15 @@ const CrossPointForm: React.FC<CrossPointFormProps> = ({ onBack }) => {
   const capabilities = status?.readestSync;
   const progressSupported = status ? supportsCrossPointProgress(status) : false;
   const canSync = !!settings.crosspoint.serverUrl && !isConnecting && !isSyncing;
+  const syncDescription = isSyncing
+    ? syncProgress
+      ? _('Syncing book {{current}} of {{total}}: {{title}}', {
+          current: syncProgress.index + 1,
+          total: syncProgress.total,
+          title: syncProgress.book.title || syncProgress.book.hash.slice(0, 8),
+        })
+      : _('Preparing CrossPoint sync…')
+    : _('Adds missing Readest EPUBs without changing Readest Cloud.');
 
   return (
     <div className='w-full'>
@@ -316,7 +330,7 @@ const CrossPointForm: React.FC<CrossPointFormProps> = ({ onBack }) => {
           )}
           <SettingsRow
             label={settings.crosspoint.lastSyncedAt ? _('Books synced') : _('Send Readest books')}
-            description={_('Adds missing Readest EPUBs without changing Readest Cloud.')}
+            description={syncDescription}
           >
             <button
               type='button'

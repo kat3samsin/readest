@@ -19,6 +19,7 @@ import { resolveCrossPointSavedXPointer } from './progressResolver';
 import type {
   CrossPointBookProvider,
   CrossPointBookStore,
+  CrossPointBookSyncProgress,
   CrossPointBookSyncResult,
 } from './types';
 
@@ -40,6 +41,7 @@ export interface CrossPointBookRunnerDependencies {
     provider: CrossPointBookProvider;
     store: CrossPointBookStore;
     books: Book[];
+    onProgress?: (progress: CrossPointBookSyncProgress) => void;
   }): Promise<CrossPointBookSyncResult>;
   syncProgress(
     args: Parameters<typeof runCrossPointProgressSync>[0],
@@ -51,6 +53,7 @@ export interface RunCrossPointBookSyncInput {
   envConfig: EnvConfigType;
   settings: SystemSettings;
   books: Book[];
+  onProgress?: (progress: CrossPointBookSyncProgress) => void;
   /**
    * Persist only this device-local field on the latest live library row.
    * The runner deliberately does not persist a downloaded Book snapshot,
@@ -294,7 +297,12 @@ const runCrossPointBookSyncUnlocked = async (
 
   let books: CrossPointBookSyncResult;
   try {
-    books = await dependencies.sendBooks({ provider, store, books: input.books });
+    books = await dependencies.sendBooks({
+      provider,
+      store,
+      books: input.books,
+      onProgress: input.onProgress,
+    });
   } catch (error) {
     return {
       ok: false,

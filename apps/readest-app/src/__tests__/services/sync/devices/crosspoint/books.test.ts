@@ -169,15 +169,20 @@ describe('sendCrossPointBooks', () => {
       provider,
       store: makeStore({ [HASH_A]: 11, [HASH_B]: 22 }),
       books,
+      onProgress: ({ book, index, total }) => {
+        events.push(`progress:${book.hash}:${index + 1}/${total}`);
+      },
     });
 
     expect(provider.list).toHaveBeenCalledOnce();
     expect(provider.list).toHaveBeenCalledWith('/');
     expect(provider.readText).toHaveBeenCalledWith(CROSSPOINT_MANIFEST_PATH);
     expect(events).toEqual([
+      `progress:${HASH_A}:1/2`,
       `manifest:${HASH_A}:uploading`,
       'upload:/One.epub',
       `manifest:${HASH_A}:active`,
+      `progress:${HASH_B}:2/2`,
       `manifest:${HASH_B}:uploading`,
       'upload:/Two.epub',
       `manifest:${HASH_B}:active`,
