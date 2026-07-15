@@ -17,7 +17,7 @@ export interface CrossPointLibraryManifest {
 
 export type CrossPointBookProvider = Pick<
   FileSyncProvider,
-  'list' | 'readText' | 'writeText' | 'head' | 'writeBinary' | 'uploadStream'
+  'list' | 'readText' | 'readBinary' | 'writeText' | 'head' | 'writeBinary' | 'uploadStream'
 >;
 
 export type CrossPointBookStore = Pick<

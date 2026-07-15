@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 
 import type { Book } from '@/types/book';
+import { md5, partialMD5 } from '@/utils/md5';
 import type {
   CrossPointBookProvider,
   CrossPointBookStore,
@@ -18,6 +19,9 @@ import {
 const HASH_A = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const HASH_B = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 const HASH_C = 'cccccccccccccccccccccccccccccccc';
+
+const makeSampledEpubBytes = (): ArrayBuffer =>
+  Uint8Array.from({ length: 8192 }, (_, index) => (index * 31 + 7) % 256).buffer;
 
 const makeBook = (hash: string, title: string, overrides: Partial<Book> = {}): Book => ({
   hash,
@@ -50,12 +54,14 @@ const makeProvider = ({
   onWriteManifest,
   onUpload,
   onHead,
+  onReadBinary,
 }: {
   root?: Awaited<ReturnType<CrossPointBookProvider['list']>>;
   initialManifest?: CrossPointLibraryManifest | string | null;
   onWriteManifest?: (value: CrossPointLibraryManifest) => Promise<void> | void;
   onUpload?: (remotePath: string, localPath: string) => Promise<boolean> | boolean;
   onHead?: CrossPointBookProvider['head'];
+  onReadBinary?: CrossPointBookProvider['readBinary'];
 } = {}): CrossPointBookProvider => {
   const manifestText =
     typeof initialManifest === 'string'
@@ -67,6 +73,7 @@ const makeProvider = ({
   return {
     list: vi.fn(async () => root),
     readText: vi.fn(async () => manifestText),
+    readBinary: vi.fn(onReadBinary ?? (async () => null)),
     writeText: vi.fn(async (_path, body) => {
       await onWriteManifest?.(JSON.parse(body) as CrossPointLibraryManifest);
     }),
@@ -207,6 +214,206 @@ describe('sendCrossPointBooks', () => {
 
     expect(uploadedPaths).toEqual(['/Shared.epub', '/Shared-bbbbbbb.epub']);
     expect(result.uploaded).toBe(2);
+  });
+
+  test('adopts a matching unmanaged root EPUB instead of uploading a hash-suffixed copy', async () => {
+    const remoteBytes = makeSampledEpubBytes();
+    const hash = await partialMD5(new File([remoteBytes], 'Existing.epub'));
+    expect(hash).not.toBe(md5(new Uint8Array(remoteBytes)));
+    const writes: CrossPointLibraryManifest[] = [];
+    const provider = makeProvider({
+      root: [
+        {
+          name: 'Existing.epub',
+          path: '/Existing.epub',
+          isDirectory: false,
+          size: remoteBytes.byteLength,
+        },
+      ],
+      onReadBinary: async () => remoteBytes,
+      onWriteManifest: (value) => {
+        writes.push(structuredClone(value));
+      },
+    });
+
+    const result = await sendCrossPointBooks({
+      provider,
+      store: makeStore({ [hash]: remoteBytes.byteLength }),
+      books: [makeBook(hash, 'Existing')],
+    });
+
+    expect(provider.readBinary).toHaveBeenCalledWith('/Existing.epub');
+    expect(provider.uploadStream).not.toHaveBeenCalled();
+    expect(writes).toEqual([
+      manifest({
+        [hash]: {
+          path: '/Existing.epub',
+          size: remoteBytes.byteLength,
+          revision: CROSSPOINT_BOOK_REVISION,
+          state: 'active',
+        },
+      }),
+    ]);
+    expect(result).toMatchObject({ uploaded: 0, recovered: 1, skipped: 0, failures: [] });
+  });
+
+  test('remaps a stale hash-suffixed manifest path to the matching preferred root EPUB', async () => {
+    const remoteBytes = makeSampledEpubBytes();
+    const hash = await partialMD5(new File([remoteBytes], 'Existing.epub'));
+    const writes: CrossPointLibraryManifest[] = [];
+    const provider = makeProvider({
+      root: [
+        {
+          name: 'Existing.epub',
+          path: '/Existing.epub',
+          isDirectory: false,
+          size: remoteBytes.byteLength,
+        },
+      ],
+      initialManifest: manifest({
+        [hash]: {
+          path: `/Existing-${hash.slice(0, 7)}.epub`,
+          size: remoteBytes.byteLength,
+          revision: 7,
+          state: 'active',
+        },
+      }),
+      onReadBinary: async () => remoteBytes,
+      onWriteManifest: (value) => {
+        writes.push(structuredClone(value));
+      },
+    });
+
+    const result = await sendCrossPointBooks({
+      provider,
+      store: makeStore({ [hash]: remoteBytes.byteLength }),
+      books: [makeBook(hash, 'Existing')],
+    });
+
+    expect(provider.readBinary).toHaveBeenCalledWith('/Existing.epub');
+    expect(provider.uploadStream).not.toHaveBeenCalled();
+    expect(writes).toEqual([
+      manifest({
+        [hash]: {
+          path: '/Existing.epub',
+          size: remoteBytes.byteLength,
+          revision: 7,
+          state: 'active',
+        },
+      }),
+    ]);
+    expect(result).toMatchObject({ uploaded: 0, recovered: 1, skipped: 0, failures: [] });
+  });
+
+  test('does not remap a live manifest path when the matching preferred root EPUB also exists', async () => {
+    const remoteBytes = makeSampledEpubBytes();
+    const hash = await partialMD5(new File([remoteBytes], 'Existing.epub'));
+    const managedPath = `/Existing-${hash.slice(0, 7)}.epub`;
+    const provider = makeProvider({
+      root: [
+        {
+          name: managedPath.slice(1),
+          path: managedPath,
+          isDirectory: false,
+          size: remoteBytes.byteLength,
+        },
+        {
+          name: 'Existing.epub',
+          path: '/Existing.epub',
+          isDirectory: false,
+          size: remoteBytes.byteLength,
+        },
+      ],
+      initialManifest: manifest({
+        [hash]: {
+          path: managedPath,
+          size: remoteBytes.byteLength,
+          revision: 7,
+          state: 'active',
+        },
+      }),
+      onReadBinary: async () => remoteBytes,
+    });
+
+    const result = await sendCrossPointBooks({
+      provider,
+      store: makeStore({ [hash]: remoteBytes.byteLength }),
+      books: [makeBook(hash, 'Existing')],
+    });
+
+    expect(provider.readBinary).not.toHaveBeenCalled();
+    expect(provider.uploadStream).not.toHaveBeenCalled();
+    expect(provider.writeText).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ uploaded: 0, recovered: 0, skipped: 1, failures: [] });
+  });
+
+  test('does not adopt a preferred root EPUB claimed by another manifest hash', async () => {
+    const remoteBytes = makeSampledEpubBytes();
+    const hash = await partialMD5(new File([remoteBytes], 'Existing.epub'));
+    const stalePath = `/Existing-${hash.slice(0, 7)}.epub`;
+    const provider = makeProvider({
+      root: [
+        {
+          name: 'Existing.epub',
+          path: '/Existing.epub',
+          isDirectory: false,
+          size: remoteBytes.byteLength,
+        },
+      ],
+      initialManifest: manifest({
+        [hash]: {
+          path: stalePath,
+          size: remoteBytes.byteLength,
+          revision: 7,
+          state: 'active',
+        },
+        [HASH_B]: {
+          path: '/Existing.epub',
+          size: remoteBytes.byteLength,
+          revision: 3,
+          state: 'active',
+        },
+      }),
+      onReadBinary: async () => remoteBytes,
+      onHead: async () => ({ size: remoteBytes.byteLength }),
+    });
+
+    const result = await sendCrossPointBooks({
+      provider,
+      store: makeStore({ [hash]: remoteBytes.byteLength }),
+      books: [makeBook(hash, 'Existing')],
+    });
+
+    expect(provider.readBinary).not.toHaveBeenCalled();
+    expect(provider.uploadStream).toHaveBeenCalledWith(
+      stalePath,
+      `/local/${hash}.epub`,
+      CROSSPOINT_STREAM_UPLOAD_TIMEOUT_MS,
+    );
+    expect(result.manifest.books[hash]?.path).toBe(stalePath);
+    expect(result.manifest.books[HASH_B]?.path).toBe('/Existing.epub');
+    expect(result).toMatchObject({ uploaded: 1, recovered: 0, skipped: 0, failures: [] });
+  });
+
+  test('keeps a hash-suffixed path when the preferred root EPUB is a true content conflict', async () => {
+    const provider = makeProvider({
+      root: [{ name: 'Existing.epub', path: '/Existing.epub', isDirectory: false, size: 4 }],
+      onReadBinary: async () => new Uint8Array([1, 2, 3, 4]).buffer,
+      onHead: async () => ({ size: 4 }),
+    });
+
+    const result = await sendCrossPointBooks({
+      provider,
+      store: makeStore({ [HASH_A]: 4 }),
+      books: [makeBook(HASH_A, 'Existing')],
+    });
+
+    expect(provider.uploadStream).toHaveBeenCalledWith(
+      '/Existing-aaaaaaa.epub',
+      `/local/${HASH_A}.epub`,
+      CROSSPOINT_STREAM_UPLOAD_TIMEOUT_MS,
+    );
+    expect(result).toMatchObject({ uploaded: 1, recovered: 0, skipped: 0, failures: [] });
   });
 
   test('uses buffered bytes when the provider has no native streaming upload', async () => {
