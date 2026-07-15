@@ -2,6 +2,7 @@ import type { Book } from '@/types/book';
 import { buildBookFileName } from '@/services/sync/file/layout';
 import type { BookBytes } from '@/services/sync/file/localStore';
 import type { FileEntry } from '@/services/sync/file/provider';
+import { partialMD5 } from '@/utils/md5';
 import type {
   CrossPointBookProvider,
   CrossPointBookStore,
@@ -228,8 +229,11 @@ export const sendCrossPointBooks = async ({
   const manifest = parseCrossPointLibraryManifest(
     await provider.readText(CROSSPOINT_MANIFEST_PATH),
   );
-  for (const entry of Object.values(manifest.books)) {
-    occupiedPaths.add(canonicalPath(entry.path));
+  const manifestPathOwners = new Map<string, string>();
+  for (const [hash, entry] of Object.entries(manifest.books)) {
+    const path = canonicalPath(entry.path);
+    manifestPathOwners.set(path, hash);
+    occupiedPaths.add(path);
   }
 
   const activeEpubs = books.filter((book) => book.format === 'EPUB' && !book.deletedAt);
@@ -260,6 +264,39 @@ export const sendCrossPointBooks = async ({
           await writeManifest(provider, manifest);
           recovered += 1;
           continue;
+        }
+      }
+
+      const previousPath = previous ? canonicalPath(previous.path) : undefined;
+      if (!previousPath || !inventory.has(previousPath)) {
+        // Adopt an unmanaged first-run file or repair a missing older mapping
+        // only when content proves it is this book. Another book's claim wins.
+        const preferredPath = chooseCrossPointBookPath(book, new Set());
+        const preferredKey = canonicalPath(preferredPath);
+        const preferredOwner = manifestPathOwners.get(preferredKey);
+        const candidate =
+          preferredOwner && preferredOwner !== book.hash ? undefined : inventory.get(preferredKey);
+        if (candidate?.size === source.size) {
+          const bytes = await provider.readBinary(candidate.path);
+          if (
+            bytes?.byteLength === source.size &&
+            (await partialMD5(new File([bytes], candidate.name))) === book.hash
+          ) {
+            manifest.books[book.hash] = {
+              path: candidate.path,
+              size: source.size,
+              revision: previous?.revision ?? CROSSPOINT_BOOK_REVISION,
+              state: 'active',
+            };
+            if (previousPath) {
+              manifestPathOwners.delete(previousPath);
+              occupiedPaths.delete(previousPath);
+            }
+            manifestPathOwners.set(preferredKey, book.hash);
+            await writeManifest(provider, manifest);
+            recovered += 1;
+            continue;
+          }
         }
       }
 
