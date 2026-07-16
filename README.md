@@ -1,260 +1,198 @@
 <div align="center">
-  <a href="https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme" target="_blank">
-    <img src="https://github.com/readest/readest/blob/main/apps/readest-app/src-tauri/icons/icon.png?raw=true" alt="Readest Logo" width="20%" />
-  </a>
-  <h1>Readest</h1>
-  <br>
-
-[Readest][link-website] is an open-source ebook reader designed for immersive and deep reading experiences. Built as a modern rewrite of [Foliate](https://github.com/johnfactotum/foliate), it leverages [Next.js 16](https://github.com/vercel/next.js) and [Tauri v2](https://github.com/tauri-apps/tauri) to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.
-
-[![Website][badge-website]][link-website]
-[![Web App][badge-web-app]][link-web-readest]
-[![OS][badge-platforms]][link-website]
-<br>
-[![Discord][badge-discord]][link-discord]
-[![Reddit][badge-reddit]][link-reddit]
-[![AGPL Licence][badge-license]](LICENSE)
-[![Language Coverage][badge-language-coverage]][link-locales]
-[![Donate][badge-donate]][link-donate]
-[![Latest release][badge-release]][link-gh-releases]
-[![Last commit][badge-last-commit]][link-gh-commits]
-[![Commits][badge-commit-activity]][link-gh-pulse]
-[![][badge-hellogithub]][link-hellogithub]
-[![Ask DeepWiki][badge-deepwiki]][link-deepwiki]
-
+  <img src="./apps/readest-app/src-tauri/icons/icon.png" alt="Readest logo" width="112" />
+  <h1>Readest for CrossPoint</h1>
+  <p>A desktop Readest fork that sends EPUBs to CrossPoint and keeps reading position moving between them.</p>
 </div>
-
-<p align="center">
-  <a href="#features">Features</a> •
-  <a href="#planned-features">Planned Features</a> •
-  <a href="#screenshots">Screenshots</a> •
-  <a href="#downloads">Downloads</a> •
-  <a href="#documentation">Documentation</a> •
-  <a href="#getting-started">Getting Started</a> •
-  <a href="#troubleshooting">Troubleshooting</a> •
-  <a href="#support">Support</a> •
-  <a href="#license">License</a>
-</p>
 
 <div align="center">
-  <a href="https://readest.com" target="_blank">
-    <img src="./data/screenshots/landing_all_platforms.png" alt="Readest Banner" width="100%" />
-  </a>
+
+[![Fork status](https://img.shields.io/badge/status-active%20fork-1f5b48)](#what-is-new)
+[![Branch](https://img.shields.io/badge/branch-crossreadest-d56842)](https://github.com/kat3samsin/readest/tree/crossreadest)
+[![Platform](https://img.shields.io/badge/CrossPoint%20bridge-desktop%20only-17231d)](#current-status)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-59635d)](LICENSE)
+
 </div>
 
-## Features
+This branch adds a dedicated CrossPoint integration to [Readest](https://github.com/readest/readest). It connects directly to the reader on your local network, sends missing EPUBs, and exchanges a stable reading position without enrolling the device as a Readest Cloud replica.
 
-<div align="left">✅ Implemented</div>
+Use it with the matching [`crossreadest` CrossPoint firmware](https://github.com/kat3samsin/crosspoint-reader/tree/crossreadest).
 
-| **Feature**                                | **Description**                                                                                                        | **Status** |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ---------- |
-| **Multi-Format Support**                   | Support EPUB, PDF, MOBI, KF8 (AZW3), FB2, CBZ, TXT, MD (Markdown)                                                                      | ✅         |
-| **Scroll/Page View Modes**                 | Switch between scrolling or paginated reading modes.                                                                   | ✅         |
-| **Full-Text Search**                       | Search inside a book or across the current library shelf to find relevant sections.                                    | ✅         |
-| **Annotations and Highlighting**           | Add highlights, bookmarks, and notes to enhance your reading experience and use instant mode for quicker interactions. | ✅         |
-| **Dictionary/Wikipedia Lookup**            | Instantly look up words and terms when reading.                                                                        | ✅         |
-| **[Parallel Read][link-parallel-read]**    | Read two books or documents simultaneously in a split-screen view.                                                     | ✅         |
-| **Customize Font and Layout**              | Adjust font, layout, theme mode, and theme colors for a personalized experience.                                       | ✅         |
-| **Code Syntax Highlighting**               | Read software manuals with rich coloring of code examples.                                                             | ✅         |
-| **File Association and Open With**         | Quickly open files in Readest in your file browser with one-click.                                                     | ✅         |
-| **Library Management**                     | Organize, sort, and manage your entire ebook library.                                                                  | ✅         |
-| **OPDS/Calibre Integration**               | Integrate OPDS/Calibre to access online libraries and catalogs.                                                        | ✅         |
-| **Translate with DeepL and Yandex**        | From a single sentence to the entire book—translate instantly.                                                         | ✅         |
-| **Text-to-Speech (TTS) Support**           | Enjoy smooth, multilingual narration—even within a single book.                                                        | ✅         |
-| [**Read-Along Narration**][link-readalong] | Play a book's own recorded narration with the text highlighted in step — Kindle Immersion Reading / Audible Read & Listen, on the open EPUB standard. Reads EPUB 3 Media Overlays; pair an ebook with its audiobook using [Storyteller][link-storyteller]. | ✅         |
-| **Sync across Platforms**                  | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms.                         | ✅         |
-| [**Sync with Koreader**][link-kosync-wiki] | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices.                             | ✅         |
-| **Accessibility**                          | Provides full keyboard navigation and support for screen readers such as VoiceOver, TalkBack, NVDA, and Orca.         | ✅         |
-| **Visual & Focus Aids**                    | Reading ruler, paragraph-by-paragraph reading mode, and speed reading features.                                        | ✅         |
+[What is new](#what-is-new) · [Mockup](#mockup) · [Current status](#current-status) · [Connect a reader](#connect-a-reader) · [Build](#build-the-desktop-app) · [Upstream Readest](#upstream-readest)
 
-## Planned Features
+## What is new
 
-<div align="left">🛠 Building</div>
-<div align="left">🔄 Planned</div>
+### CrossPoint under Integrations
 
-| **Feature**                     | **Description**                                                            | **Priority** |
-| ------------------------------- | -------------------------------------------------------------------------- | ------------ |
-| **AI-Powered Summarization**    | Generate summaries of books or chapters using AI for quick insights.       | 🛠           |
-| **Advanced Reading Stats**      | Track reading time, pages read, and more for detailed insights.            | 🛠           |
-| **Audiobook Support**           | Extend functionality to play and manage audiobooks.                        | 🔄           |
-| **Handwriting Annotations**     | Add support for handwriting annotations using a pen on compatible devices. | 🔄           |
+The desktop settings app has a dedicated **Settings → Integrations → CrossPoint** page. Enter the reader's address, test the connection, and keep the verified device identity with the local Readest settings.
 
-Stay tuned for continuous improvements and updates! Contributions and suggestions are always welcome—let's build the ultimate reading experience together. 😊
+The connection check reads the firmware capability response before a sync starts. A changed device, unsupported build, or unreachable address gets a specific error instead of a generic failed transfer.
 
-## Screenshots
+### Missing-book transfer
 
-![Annotations](./data/screenshots/annotations.png)
+- Sends active EPUBs from the Readest library to the root of the CrossPoint SD card.
+- Downloads a Readest Cloud book locally first when the desktop library does not have its bytes yet.
+- Streams native desktop files instead of loading a whole EPUB into JavaScript memory.
+- Uploads books sequentially, verifies their size, and records each step in the device manifest.
+- Adopts an identical EPUB already on the reader, avoiding a second copy on first sync.
+- Resumes an interrupted manifest entry when the completed file is already present.
+- Leaves unmanaged files on the reader alone.
 
-![TTS](./data/screenshots/tts_speak_aloud.png)
+The sync does not change Readest Cloud or register CrossPoint as a normal cloud file provider.
 
-![DeepL](./data/screenshots/deepl.png)
+### Reading-position exchange
 
-![Footnote](./data/screenshots/footnote_popover.png)
+- Reads and writes versioned progress sidecars under `/.crosspoint/readest-sync/`.
+- Uses the EPUB's stable document identity instead of its filename.
+- Resolves positions against the matching EPUB, so font size and pagination changes do not turn a page number into the source of truth.
+- Stages a position received from CrossPoint until the matching EPUB opens in desktop Readest.
+- Keeps separate Readest-owned and CrossPoint-owned state, with atomic replacement on the firmware side.
 
-![Wikipedia](./data/screenshots/wikipedia_vertical.png)
+### Progress you can actually see
 
-![Theming Dark Mode](./data/screenshots/theming_dark_mode.png)
+While sending a library, the integration reports:
 
----
-
-## Downloads
-
-### Mobile Apps
-
-<div align="center">
-  <a href="https://apps.apple.com/app/id6738622779">
-    <img alt="Download on the App Store" src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" style="height: 50px;" /></a>&nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://play.google.com/store/apps/details?id=com.bilingify.readest">
-    <img alt="Get it on Google Play" src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" style="height: 50px;" /></a>
-</div>
-
-### Platform-Specific Downloads
-
-- macOS / iOS / iPadOS : Search and install **Readest** on the [App Store][link-appstore], _also_ available on TestFlight for beta test (send your Apple ID to <readestapp@gmail.com> to request access).
-- Windows / Linux / Android: Visit and download **Readest** at [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
-- Linux users can also install [Readest on Flathub][link-flathub].
-- Web: Visit and use **Readest for Web** at [https://web.readest.com][link-web-readest].
-
-## Documentation
-
-Guides, tutorials, and FAQs for installing and using Readest live in the official documentation:
-
-📖 **[https://readest.com/docs][link-docs]**
-
-## Building from Source
-
-To build Readest from the latest commit, see [Getting Started](./CONTRIBUTING.md#getting-started).
-
-## Troubleshooting
-
-### 1. Readest Won’t Launch on Windows (Missing Edge WebView2 Runtime)
-
-**Symptom**
-
-- When you double-click readest.exe, nothing happens. No window appears, and Task Manager does not show the process.
-- This can affect both the standard installer and the portable version.
-
-**Cause**
-
-- Microsoft Edge WebView2 Runtime is either missing, outdated, or improperly installed on your system. Readest depends on WebView2 to render the interface on Windows.
-
-**How to Fix**
-
-1. Check if WebView2 is installed
-   - Open “Add or Remove Programs” (a.k.a. Apps & features) on Windows. Look for “Microsoft Edge WebView2 Runtime.”
-2. Install or Update WebView2
-   - Download the WebView2 Runtime directly from Microsoft: [link](https://developer.microsoft.com/en-us/microsoft-edge/webview2?form=MA13LH).
-   - If you prefer an offline installer, download the offline package and run it as an Administrator.
-3. Re-run Readest
-   - After installing/updating WebView2, launch readest.exe again.
-   - If you still encounter problems, reboot your PC and try again.
-
-**Additional Tips**
-
-- If reinstalling once doesn’t work, uninstall Edge WebView2 completely, then reinstall it with Administrator privileges.
-- Verify your Windows installation has the latest updates from Microsoft.
-
-**Still Stuck?**
-
-- See Issue [readest/readest#358](https://github.com/readest/readest/issues/358) for further details, or head over to our [Discord][link-discord] server and open a support discussion with detailed logs of your environment and the steps you’ve taken.
-
-### 2. AppImage Launches but Only Shows a Taskbar Icon
-
-On some Arch Linux systems—especially those using Wayland—the Readest AppImage may briefly show an icon in the taskbar and then exit without opening a window.
-
-You might see logs such as:
-
-```
-Could not create default EGL display: EGL_BAD_PARAMETER. Aborting...
+```text
+Preparing CrossPoint sync…
+Syncing book 3 of 12: The Quiet Reader
 ```
 
-This behavior is usually caused by compatibility issues between the bundled AppImage libraries and the system’s EGL / Wayland environment.
+The final notice distinguishes success, partial book transfer, progress conflicts, unavailable local files, and device changes.
 
-**Workaround 1: Launch with LD_PRELOAD (recommended)**
+## Mockup
 
-You can preload the system Wayland client library before launching the AppImage:
+![Readest CrossPoint integration mockup showing connection and live book sync progress](./data/screenshots/crosspoint/device-sync-mockup.png)
 
+This is a UI mockup based on the current `crossreadest` branch. Its labels, capability states, and progress copy match the implementation.
+
+## Current status
+
+| Capability | State |
+| --- | --- |
+| Connect by local IP address | Shipped |
+| Verify device identity and firmware capabilities | Shipped |
+| Send missing EPUBs | Shipped |
+| Adopt matching files already on CrossPoint | Shipped |
+| Resume interrupted book transfer | Shipped |
+| Show current book during library sync | Shipped |
+| CrossPoint → Readest reading position | Shipped |
+| Readest → CrossPoint reading position | Shipped |
+| Bookmarks and highlights | Design only |
+| Mobile and web CrossPoint bridge | Not supported |
+
+CrossPoint can create and display its own persistent highlights. Moving those ranges between the two apps is a separate protocol. The firmware continues to advertise `highlights: false` until that round trip is implemented and tested on hardware.
+
+See [the staged annotation sync contract](./docs/READEST_ANNOTATION_SYNC.md) for that work.
+
+## Connect a reader
+
+### Before you start
+
+- Install the matching custom CrossPoint firmware.
+- Use the Readest desktop app from this branch.
+- Put the computer and reader on the same trusted Wi-Fi network.
+- Test with one EPUB before sending a large library.
+
+### Pair and sync
+
+1. On CrossPoint, open **File Transfer → Join Network**.
+2. Note the IP address shown on the reader.
+3. In Readest desktop, open **Settings → Integrations → CrossPoint**.
+4. Enter the IP address. A bare address such as `192.168.0.154` is accepted.
+5. Select **Connect**.
+6. Confirm that Books and Progress show as supported.
+7. Select **Sync books**.
+8. Open the matching EPUB when you want a staged reading position applied.
+
+The current CrossPoint WebDAV server is unauthenticated. Keep this setup on a trusted local network.
+
+## How the bridge is separated
+
+Three pieces are related, but they do different jobs:
+
+| Piece | Job |
+| --- | --- |
+| Readest Cloud | Syncs Readest apps and account data |
+| CrossPoint WebDAV | Carries EPUB files and bridge sidecars over the local network |
+| CrossPoint progress protocol | Chooses and applies a stable reading position for one matching EPUB |
+
+Book transfer finishing does not prove that a newly received position has rendered. Desktop Readest applies a staged CrossPoint position when the matching book opens. CrossPoint applies a Readest position only after it resolves and renders the matching location.
+
+## Failure boundaries
+
+The bridge is intentionally conservative:
+
+- A saved serial mismatch stops the run and asks for an explicit reconnect.
+- A malformed manifest stops transfer instead of guessing ownership.
+- Readest-managed paths are recorded in `/.crosspoint/readest-library.json`.
+- Existing unmanaged EPUBs are preserved.
+- An upload becomes active only after its remote size matches the local source.
+- Concurrent sync button presses share one active run.
+- Highlight support stays off until the complete annotation contract ships.
+
+## Build the desktop app
+
+### Prerequisites
+
+- Node.js 22
+- pnpm 11.1.1 through Corepack
+- Rust and the platform dependencies required by Tauri 2
+
+```bash
+git clone https://github.com/kat3samsin/readest.git
+cd readest
+git checkout crossreadest
+corepack enable
+pnpm install
+pnpm tauri build
 ```
-LD_PRELOAD=/usr/lib/libwayland-client.so /path/to/Readest.AppImage
+
+For a development window:
+
+```bash
+pnpm tauri dev
 ```
 
-This workaround has been confirmed to resolve the issue on affected systems.
+Readest's platform setup and signing requirements remain in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-**Workaround 2: Use the Flatpak Version**
+## Verify the CrossPoint work
 
-If you prefer a more reliable out-of-the-box experience on Arch Linux, consider using the [Flatpak build on Flathub][link-flathub] instead. The Flatpak runtime helps avoid system library mismatches and tends to behave more consistently across different Wayland and X11 setups.
+Run the focused component and service tests:
 
-## Contributors
+```bash
+pnpm --filter @readest/readest-app test --run \
+  src/__tests__/components/settings/CrossPointForm.test.tsx \
+  src/__tests__/services/sync/devices/crosspoint
+```
 
-Readest is open-source, and contributions are welcome! Feel free to open issues, suggest features, or submit pull requests. Please **review our [contributing guidelines](CONTRIBUTING.md) before you start**. We also welcome you to join our [Discord][link-discord] community for either support or contributing guidance.
+Then run the normal static checks:
 
-<a href="https://github.com/readest/readest/graphs/contributors">
-  <p align="left">
-    <img width="500" src="https://contrib.rocks/image?repo=readest/readest" alt="A table of avatars from the project's contributors" />
-  </p>
-</a>
+```bash
+pnpm lint
+pnpm format:check
+```
 
-## Support
+## Upstream Readest
 
-If Readest has been useful to you, consider supporting its development at [donate.readest.com](https://donate.readest.com), where you'll find all available donation methods, including GitHub Sponsors, card payments, and crypto. Your contribution helps us fix bugs faster, improve performance, and keep building great features.
+This fork retains the full Readest application, including:
 
-## License
+- EPUB, MOBI, KF8/AZW3, FB2, CBZ, TXT, and PDF reading
+- Paginated and scrolling layouts
+- Readest Cloud sync
+- Highlights, notes, bookmarks, dictionary, Wikipedia, and translation
+- OPDS and Calibre integration
+- Text to speech and parallel reading
+- macOS, Windows, Linux, iOS, Android, web, and PWA targets
 
-Readest is free software: you can redistribute it and/or modify it under the terms of the [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.html) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See the [LICENSE](LICENSE) file for details.
+The CrossPoint bridge itself is desktop-only because it uses native file streaming and a direct local-network connection.
 
-The following libraries and frameworks are used in this software:
+For official releases, mobile apps, documentation, and community support, visit:
 
-- [foliate-js](https://github.com/johnfactotum/foliate-js), which is MIT licensed.
-- [zip.js](https://github.com/gildas-lormeau/zip.js), which is licensed under the BSD-3-Clause license.
-- [fflate](https://github.com/101arrowz/fflate), which is MIT licensed.
-- [PDF.js](https://github.com/mozilla/pdf.js), which is licensed under Apache License 2.0.
-- [daisyUI](https://github.com/saadeghi/daisyui), which is MIT licensed.
-- [marked](https://github.com/markedjs/marked), which is MIT licensed.
-- [next.js](https://github.com/vercel/next.js), which is MIT licensed.
-- [react-icons](https://github.com/react-icons/react-icons), which has various open-source licenses.
-- [react](https://github.com/facebook/react), which is MIT licensed.
-- [tauri](https://github.com/tauri-apps/tauri), which is MIT licensed.
+- [readest.com](https://readest.com)
+- [readest/readest](https://github.com/readest/readest)
+- [Readest documentation](https://readest.com/docs)
 
-The following fonts are utilized in this software, either bundled within the application or provided through web fonts:
+## Credits and license
 
-[Bitter](https://fonts.google.com/specimen/Bitter), [Fira Code](https://fonts.google.com/specimen/Fira+Code), [Inter](https://fonts.google.com/specimen/Inter), [Literata](https://fonts.google.com/specimen/Literata), [Merriweather](https://fonts.google.com/specimen/Merriweather), [Noto Sans](https://fonts.google.com/specimen/Noto+Sans), [Roboto](https://fonts.google.com/specimen/Roboto), [LXGW WenKai](https://github.com/lxgw/LxgwWenKai), [MiSans](https://hyperos.mi.com/font/en/), [Source Han](https://github.com/adobe-fonts/source-han-sans/), [WenQuanYi Micro Hei](http://wenq.org/wqy2/)
+Readest for CrossPoint is a fork of [Readest](https://github.com/readest/readest), which is a modern rewrite of [Foliate](https://github.com/johnfactotum/foliate). The reader, library, sync foundation, accessibility work, translations, and platform support belong to the upstream contributors.
 
-We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.netlify.app) for offering open-source tools that enable the use of Chinese fonts on the web.
-
----
-
-<div align="center" style="color: gray;">Happy reading with Readest!</div>
-
-[badge-website]: https://img.shields.io/badge/website-readest.com-orange
-[badge-web-app]: https://img.shields.io/badge/read%20online-web.readest.com-orange
-[badge-license]: https://img.shields.io/badge/license-AGPL--3.0-teal
-[badge-release]: https://img.shields.io/github/v/release/readest/readest?color=green
-[badge-platforms]: https://img.shields.io/badge/platforms-macOS%2C%20Windows%2C%20Linux%2C%20Android%2C%20iOS%2C%20Web%2C%20PWA-green
-[badge-last-commit]: https://img.shields.io/github/last-commit/readest/readest?color=blue
-[badge-commit-activity]: https://img.shields.io/github/commit-activity/m/readest/readest?color=blue
-[badge-discord]: https://img.shields.io/discord/1314226120886976544?color=5865F2&label=discord&labelColor=black&logo=discord&logoColor=white&style=flat-square
-[badge-hellogithub]: https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=8a5b6ade2aee461a8bd94e59200682a7&claim_uid=eRLUbPOy2qZtDgw&theme=small
-[badge-donate]: https://donate.readest.com/badge.svg
-[badge-deepwiki]: https://deepwiki.com/badge.svg
-[badge-reddit]: https://img.shields.io/reddit/subreddit-subscribers/readest?style=flat&logo=reddit&color=F37E41
-[badge-language-coverage]: https://img.shields.io/badge/coverage-53%25%20population%20🌍-green
-[link-donate]: https://donate.readest.com/?tickers=btc%2Ceth%2Csol%2Cusdc
-[link-appstore]: https://apps.apple.com/app/apple-store/id6738622779?pt=127463130&ct=github&mt=8
-[link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
-[link-flathub]: https://flathub.org/en/apps/com.bilingify.readest
-[link-web-readest]: https://web.readest.com
-[link-docs]: https://readest.com/docs
-[link-gh-releases]: https://github.com/readest/readest/releases
-[link-gh-commits]: https://github.com/readest/readest/commits/main
-[link-gh-pulse]: https://github.com/readest/readest/pulse
-[link-gh-wiki]: https://github.com/readest/readest/wiki
-[link-discord]: https://discord.gg/gntyVNk3BJ
-[link-parallel-read]: https://readest.com/#parallel-read
-[link-koreader]: https://github.com/koreader/koreader
-[link-hellogithub]: https://hellogithub.com/repository/8a5b6ade2aee461a8bd94e59200682a7
-[link-deepwiki]: https://deepwiki.com/readest/readest
-[link-locales]: https://github.com/readest/readest/tree/main/apps/readest-app/public/locales
-[link-kosync-wiki]: https://github.com/readest/readest/wiki/Sync-with-Koreader-devices
-[link-readalong]: https://github.com/readest/readest/blob/main/apps/readest-app/docs/read-along-narration.md
-[link-storyteller]: https://storyteller-platform.dev/
-[link-reddit]: https://reddit.com/r/readest/
+Readest is free software under the [GNU Affero General Public License v3](./LICENSE).

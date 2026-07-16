@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Readest CrossPoint device sync mockup</title>
+  <desc id="desc">Two Readest desktop settings windows showing CrossPoint connection and live book sync progress.</desc>
+  <defs>
+    <linearGradient id="backdrop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f1e8"/>
+      <stop offset="1" stop-color="#dce7de"/>
+    </linearGradient>
+    <filter id="window-shadow" x="-15%" y="-20%" width="130%" height="150%">
+      <feDropShadow dx="0" dy="20" stdDeviation="22" flood-color="#142b22" flood-opacity=".2"/>
+    </filter>
+    <style>
+      .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .eyebrow { fill: #1f5b48; font-size: 14px; font-weight: 800; letter-spacing: .14em; }
+      .window-title { fill: #16211c; font-size: 17px; font-weight: 700; }
+      .sidebar { fill: #4c5751; font-size: 13px; }
+      .sidebar-selected { fill: #16211c; font-size: 13px; font-weight: 700; }
+      .heading { fill: #16211c; font-size: 27px; font-weight: 760; letter-spacing: -.02em; }
+      .subheading { fill: #59635d; font-size: 13px; }
+      .section { fill: #1f5b48; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+      .row-title { fill: #16211c; font-size: 14px; font-weight: 650; }
+      .row-copy { fill: #69736e; font-size: 12px; }
+      .value { fill: #16211c; font-size: 12px; }
+      .caption-title { fill: #17231d; font-size: 23px; font-weight: 760; }
+      .caption-copy { fill: #59635d; font-size: 15px; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#backdrop)"/>
+  <circle cx="90" cy="920" r="270" fill="#df7049" opacity=".1"/>
+  <circle cx="1510" cy="90" r="260" fill="#1f5b48" opacity=".08"/>
+
+  <g class="sans">
+    <text x="72" y="68" class="eyebrow">READEST DESKTOP · CURRENT BRANCH MOCKUP</text>
+    <text x="72" y="118" fill="#17231d" font-size="44" font-weight="780" letter-spacing="-.035em">CrossPoint lives beside your other integrations.</text>
+    <text x="72" y="153" fill="#59635d" font-size="18">Connect on your local network, then send missing EPUBs and exchange reading position.</text>
+  </g>
+
+  <!-- Connect window -->
+  <g transform="translate(72 212)" filter="url(#window-shadow)">
+    <rect width="696" height="600" rx="16" fill="#fbfaf6" stroke="#bec7c0"/>
+    <path d="M0 16Q0 0 16 0h664q16 0 16 16v38H0z" fill="#edf0ec"/>
+    <circle cx="22" cy="27" r="6" fill="#e06f51"/>
+    <circle cx="42" cy="27" r="6" fill="#e0b34f"/>
+    <circle cx="62" cy="27" r="6" fill="#6f9c77"/>
+    <text x="348" y="33" text-anchor="middle" class="sans window-title">Readest Settings</text>
+
+    <rect x="0" y="54" width="168" height="546" fill="#f0efe9"/>
+    <g class="sans">
+      <text x="24" y="94" class="sidebar">General</text>
+      <text x="24" y="130" class="sidebar">Appearance</text>
+      <text x="24" y="166" class="sidebar">Reading</text>
+      <rect x="12" y="188" width="144" height="38" rx="8" fill="#dfe9df"/>
+      <text x="24" y="212" class="sidebar-selected">Integrations</text>
+      <text x="24" y="254" class="sidebar">Sync</text>
+      <text x="24" y="290" class="sidebar">About</text>
+    </g>
+
+    <g transform="translate(198 82)" class="sans">
+      <text x="0" y="0" class="subheading">Integrations  /  CrossPoint</text>
+      <text x="0" y="39" class="heading">CrossPoint</text>
+      <text x="0" y="65" class="subheading">Send your Readest EPUB library to a CrossPoint reader on your network.</text>
+
+      <rect x="0" y="91" width="468" height="62" rx="10" fill="#f5e9d8" stroke="#dcc7a8"/>
+      <text x="16" y="116" fill="#624928" font-size="12" font-weight="700">Trusted local network only</text>
+      <text x="16" y="138" fill="#745b39" font-size="11">The current CrossPoint server has no authentication.</text>
+
+      <text x="0" y="184" class="section">SERVER URL</text>
+      <rect x="0" y="197" width="336" height="44" rx="8" fill="#fff" stroke="#9eaaa3"/>
+      <text x="14" y="224" class="value">192.168.0.154</text>
+      <rect x="350" y="197" width="118" height="44" rx="8" fill="#1f5b48"/>
+      <text x="409" y="224" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">Connect</text>
+
+      <text x="0" y="280" class="section">DEVICE SYNC</text>
+      <rect x="0" y="293" width="468" height="156" rx="10" fill="#fff" stroke="#c7cec9"/>
+      <text x="16" y="323" class="row-title">CrossPoint</text>
+      <text x="16" y="344" class="row-copy">No device confirmed yet</text>
+      <line x1="16" y1="363" x2="452" y2="363" stroke="#e0e4e1"/>
+      <text x="16" y="393" class="row-title">Send Readest books</text>
+      <text x="16" y="414" class="row-copy">Adds missing EPUBs without changing Readest Cloud.</text>
+      <rect x="362" y="381" width="90" height="36" rx="8" fill="#edf2ee"/>
+      <text x="407" y="404" text-anchor="middle" fill="#758078" font-size="11" font-weight="700">Sync books</text>
+    </g>
+  </g>
+
+  <!-- Sync window -->
+  <g transform="translate(832 212)" filter="url(#window-shadow)">
+    <rect width="696" height="600" rx="16" fill="#fbfaf6" stroke="#bec7c0"/>
+    <path d="M0 16Q0 0 16 0h664q16 0 16 16v38H0z" fill="#edf0ec"/>
+    <circle cx="22" cy="27" r="6" fill="#e06f51"/>
+    <circle cx="42" cy="27" r="6" fill="#e0b34f"/>
+    <circle cx="62" cy="27" r="6" fill="#6f9c77"/>
+    <text x="348" y="33" text-anchor="middle" class="sans window-title">Readest Settings</text>
+
+    <rect x="0" y="54" width="168" height="546" fill="#f0efe9"/>
+    <g class="sans">
+      <text x="24" y="94" class="sidebar">General</text>
+      <text x="24" y="130" class="sidebar">Appearance</text>
+      <text x="24" y="166" class="sidebar">Reading</text>
+      <rect x="12" y="188" width="144" height="38" rx="8" fill="#dfe9df"/>
+      <text x="24" y="212" class="sidebar-selected">Integrations</text>
+      <text x="24" y="254" class="sidebar">Sync</text>
+      <text x="24" y="290" class="sidebar">About</text>
+    </g>
+
+    <g transform="translate(198 82)" class="sans">
+      <text x="0" y="0" class="subheading">Integrations  /  CrossPoint</text>
+      <text x="0" y="39" class="heading">CrossPoint</text>
+      <text x="0" y="65" class="subheading">Send your Readest EPUB library to a CrossPoint reader on your network.</text>
+
+      <rect x="0" y="91" width="468" height="62" rx="10" fill="#e3eee5" stroke="#b8ccb9"/>
+      <text x="16" y="117" fill="#24553f" font-size="12" font-weight="700">Connected to CrossPoint X4</text>
+      <text x="16" y="138" fill="#4d6858" font-size="11">Device identity and firmware capabilities verified.</text>
+
+      <text x="0" y="184" class="section">SERVER URL</text>
+      <rect x="0" y="197" width="336" height="44" rx="8" fill="#fff" stroke="#9eaaa3"/>
+      <text x="14" y="224" class="value">http://192.168.0.154</text>
+      <rect x="350" y="197" width="118" height="44" rx="8" fill="#edf2ee" stroke="#c7cec9"/>
+      <text x="409" y="224" text-anchor="middle" fill="#1f5b48" font-size="12" font-weight="700">Test connection</text>
+
+      <text x="0" y="280" class="section">DEVICE SYNC</text>
+      <rect x="0" y="293" width="468" height="205" rx="10" fill="#fff" stroke="#c7cec9"/>
+      <text x="16" y="323" class="row-title">CrossPoint X4</text>
+      <text x="16" y="344" class="row-copy">Serial 3844BE9883D8</text>
+      <line x1="16" y1="363" x2="452" y2="363" stroke="#e0e4e1"/>
+      <text x="16" y="392" class="row-title">Firmware capabilities</text>
+      <text x="452" y="387" text-anchor="end" class="value">Books: supported</text>
+      <text x="452" y="406" text-anchor="end" class="value">Progress: supported</text>
+      <text x="452" y="425" text-anchor="end" class="row-copy">Highlights: not yet supported</text>
+      <line x1="16" y1="440" x2="452" y2="440" stroke="#e0e4e1"/>
+      <text x="16" y="468" class="row-title">Send Readest books</text>
+      <text x="16" y="489" class="row-copy">Syncing book 3 of 12: The Quiet Reader</text>
+      <circle cx="428" cy="470" r="12" fill="none" stroke="#1f5b48" stroke-width="3" stroke-dasharray="26 14"/>
+      <path d="M428 458a12 12 0 0 1 11 7" stroke="#1f5b48" stroke-width="3" fill="none"/>
+    </g>
+  </g>
+
+  <g transform="translate(126 860)" class="sans">
+    <text x="0" y="0" class="caption-title">1. Connect once</text>
+    <text x="0" y="30" class="caption-copy">Readest saves the verified device identity.</text>
+  </g>
+  <g transform="translate(886 860)" class="sans">
+    <text x="0" y="0" class="caption-title">2. See the work</text>
+    <text x="0" y="30" class="caption-copy">Book-level status replaces a spinner with no context.</text>
+  </g>
+
+  <g class="sans" transform="translate(72 956)">
+    <rect x="0" y="-13" width="8" height="8" rx="4" fill="#df7049"/>
+    <text x="22" y="-4" fill="#59635d" font-size="13">Mockup, not a production screenshot. Copy and capability states match the current crossreadest branch.</text>
+  </g>
+</svg>
