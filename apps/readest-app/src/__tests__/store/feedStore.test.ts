@@ -59,4 +59,24 @@ describe('feedStore', () => {
     });
     expect(useFeedStore.getState().feeds[0]!.errorMessage).toBe('boom');
   });
+
+  it('marks transferred articles and preserves that state across refreshes', async () => {
+    const feed = await useFeedStore
+      .getState()
+      .addFeed('https://s.example.com/feed', async () => parsed('Blog', ['a', 'b']));
+
+    useFeedStore.getState().markItemsCrossPointSynced([{ feedId: feed.id, itemId: 'a' }], 1234);
+
+    expect(useFeedStore.getState().feeds[0]!.items.find((item) => item.id === 'a')).toMatchObject({
+      crossPointSyncedAt: 1234,
+    });
+
+    await useFeedStore.getState().refreshFeed(feed.id, async () => parsed('Blog', ['c', 'a', 'b']));
+    expect(useFeedStore.getState().feeds[0]!.items.find((item) => item.id === 'a')).toMatchObject({
+      crossPointSyncedAt: 1234,
+    });
+    expect(
+      useFeedStore.getState().feeds[0]!.items.find((item) => item.id === 'c'),
+    ).not.toHaveProperty('crossPointSyncedAt');
+  });
 });

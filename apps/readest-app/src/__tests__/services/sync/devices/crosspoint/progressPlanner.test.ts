@@ -8,6 +8,7 @@ import {
 } from '@/services/sync/devices/crosspoint/progressProtocol';
 import {
   planCrossPointProgressExchange,
+  preferCrossPointProgress,
   type CrossPointProgressConflictKind,
 } from '@/services/sync/devices/crosspoint/progressPlanner';
 import type { CrossPointLocalProgressState } from '@/services/sync/devices/crosspoint/progressState';
@@ -91,6 +92,31 @@ describe('CrossPoint causal progress planner', () => {
       plan({ local: R2, readest: null, crosspoint: crosspoint(C2), state: null }),
       'BASELINE_MISSING',
     );
+  });
+
+  test('stages the device position only after an explicit CrossPoint-wins choice', () => {
+    const remote = crosspoint(C3, R3.xpointer, R3.percentage);
+    const conflicted = plan({
+      local: R2,
+      readest: buildReadestProgressSidecar(DOCUMENT, R2, C2),
+      crosspoint: remote,
+      state: null,
+    });
+
+    expect(preferCrossPointProgress(conflicted)).toEqual({
+      kind: 'STAGE_CROSSPOINT',
+      remote,
+      state: {
+        ...causalState(null, null),
+        pendingCrosspoint: {
+          revision: C3,
+          xpointer: R3.xpointer,
+          percentage: R3.percentage,
+          observedReadest: R2,
+        },
+        staleReadest: R2,
+      },
+    });
   });
 
   test('no-ops when neither causal side moved', () => {

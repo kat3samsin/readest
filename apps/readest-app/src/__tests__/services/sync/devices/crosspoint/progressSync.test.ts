@@ -187,6 +187,41 @@ describe('runCrossPointProgressSync', () => {
     expect(provider.writeText).not.toHaveBeenCalled();
   });
 
+  test('stages a baseline conflict when the user explicitly chooses CrossPoint progress', async () => {
+    const { store: stateStore, states } = makeStateStore();
+    const local = buildPortableReadestPosition({
+      document: HASH_A,
+      xpointer: '/body/DocFragment[2]/body',
+      percentage: 0.2,
+    });
+    const provider = makeProvider(async (path) => {
+      if (path.endsWith('.readest.json')) {
+        return JSON.stringify(buildReadestProgressSidecar(HASH_A, local, C2));
+      }
+      return crosspointRaw(HASH_A);
+    });
+    const bookStore: CrossPointProgressBookStore = {
+      loadConfig: vi.fn(async () => config(local.xpointer)),
+    };
+
+    const result = await runCrossPointProgressSync({
+      provider,
+      stateStore,
+      store: bookStore,
+      books: [makeBook(HASH_A)],
+      manifest: manifest([HASH_A]),
+      resolveXPointer: async (_book, value) => value.xpointer ?? null,
+      preferCrossPointDocuments: [HASH_A],
+    });
+
+    expect(result).toMatchObject({ staged: 1, conflicts: [], failures: [] });
+    expect(states.get(HASH_A)).toMatchObject({
+      pendingCrosspoint: { revision: C3, observedReadest: local },
+      staleReadest: local,
+    });
+    expect(provider.writeText).not.toHaveBeenCalled();
+  });
+
   test('publishes local progress and retries once from a fresh snapshot', async () => {
     const { store: stateStore, states } = makeStateStore();
     const r2 = buildPortableReadestPosition({

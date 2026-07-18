@@ -87,7 +87,7 @@ export async function buildEpub(
             return (
               `<navPoint id="navPoint-${id}" playOrder="${i + 1}">` +
               `<navLabel><text>${escapeXml(chapter.title)}</text></navLabel>` +
-              `<content src="./OEBPS/${id}.xhtml"/></navPoint>`
+              `<content src="OEBPS/${id}.xhtml"/></navPoint>`
             );
           })
           .join('\n');

@@ -377,6 +377,86 @@ describe('CrossPointForm', () => {
     ).toBeTruthy();
   });
 
+  test('lets the user explicitly choose CrossPoint progress for a conflicted book', async () => {
+    const configured = makeSettings();
+    configured.crosspoint = {
+      serverUrl: 'http://192.168.0.154',
+      username: '',
+      password: '',
+      device: 'X4',
+    };
+    useSettingsStore.setState({ settings: configured } as never);
+    const books = {
+      manifest: { version: 1 as const, books: {} },
+      considered: 1,
+      uploaded: 0,
+      recovered: 0,
+      skipped: 1,
+      unavailable: 0,
+      failures: [],
+    };
+    const crosspointWire = {
+      schemaVersion: 2 as const,
+      document: HASH,
+      revision: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      xpointer: '/body/DocFragment[45]/body/div[1]/p[5]',
+      percentage: 0.56,
+      appliedReadest: null,
+      spineIndex: 44,
+      pageNumber: 0,
+      pageCount: 34,
+    };
+    runCrossPointBookSync
+      .mockResolvedValueOnce({
+        ok: false,
+        code: 'PROGRESS_SYNC_PARTIAL',
+        status,
+        hydratedBookHashes: [],
+        books,
+        progress: {
+          supported: true,
+          sync: {
+            ...progressSync,
+            unchanged: 0,
+            conflicts: [
+              {
+                kind: 'BASELINE_MISSING',
+                document: HASH,
+                baseline: null,
+                local: null,
+                readestWire: null,
+                crosspointWire,
+              },
+            ],
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        code: 'SUCCESS',
+        status,
+        hydratedBookHashes: [],
+        books,
+        progress: { supported: true, sync: { ...progressSync, staged: 1, unchanged: 0 } },
+      });
+    render(<CrossPointForm onBack={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+    expect(await screen.findByText('Witchcraft for Wayward Girls')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use CrossPoint progress' }));
+
+    await waitFor(() => expect(runCrossPointBookSync).toHaveBeenCalledTimes(2));
+    expect(runCrossPointBookSync).toHaveBeenLastCalledWith(
+      expect.objectContaining({ preferCrossPointDocuments: [HASH] }),
+    );
+    expect(
+      await screen.findByText(
+        '1 book(s) synced. 1 CrossPoint progress update(s) were received and will apply when the matching EPUB opens in desktop Readest.',
+      ),
+    ).toBeTruthy();
+  });
+
   test('does not expose the device connection or sync controls outside the desktop app', () => {
     appService.isDesktopApp = false;
     const configured = makeSettings();

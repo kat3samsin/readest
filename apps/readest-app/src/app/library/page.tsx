@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { MdChevronRight, MdClose } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
-import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
+import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/navigation';
 
 import { Book, BooksGroup, type LibrarySearchConfig } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
@@ -86,9 +86,6 @@ import { BookDetailModal } from '@/components/metadata';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { CatalogDialog } from './components/OPDSDialog';
 import { FeedsView } from './components/feeds/FeedsView';
-import AddFeedModal from './components/feeds/AddFeedModal';
-import { fetchAndParseFeed } from '@/services/rss/feedClient';
-import { createFeedBook, ensureFeedBookCover } from '@/services/rss/feedBook';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { BackupWindow } from './components/BackupWindow';
 import { CacheManagerWindow } from './components/CacheManagerWindow';
@@ -191,6 +188,7 @@ const LibraryPageWithSearchParams = () => {
 
 const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchParams | null }) => {
   const router = useAppRouter();
+  const plainRouter = useRouter();
   const { envConfig, appService } = useEnv();
   const { token, user } = useAuth();
   const {
@@ -236,7 +234,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     searchParams?.get('opds') === 'true',
   );
   const [showFeeds, setShowFeeds] = useState(false);
-  const [showAddFeed, setShowAddFeed] = useState(false);
   const [showImportFromUrl, setShowImportFromUrl] = useState(false);
   const [showImportNovel, setShowImportNovel] = useState(false);
   const [importMenuAnchor, setImportMenuAnchor] = useState<HTMLElement | null>(null);
@@ -631,21 +628,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const handleShowFeeds = () => {
-    setShowAddFeed(true);
-  };
-
-  const handleAddFeedSubmit = async (url: string) => {
-    const parsed = await fetchAndParseFeed(url);
-    const book = createFeedBook(url, parsed);
-    if (appService) {
-      book.coverImageUrl = await ensureFeedBookCover(appService, book);
-    }
-    await useLibraryStore.getState().updateBooks(envConfig, [book]);
-    eventDispatcher.dispatch('toast', {
-      type: 'success',
-      message: _('Subscribed to "{{title}}"', { title: book.title }),
-      timeout: 3000,
-    });
+    setShowFeeds(true);
   };
 
   const handleShowOPDSDialog = () => {
@@ -691,7 +674,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           saveSettings(envConfig, settings);
         }
       } else if (settings.keepLogin) {
-        router.push('/auth');
+        // Startup effects can run twice in development Strict Mode. A second
+        // animated navigation aborts the first native view transition and
+        // surfaces as an unhandled AbortError, so this automatic redirect uses
+        // Next's plain router instead.
+        plainRouter.push('/auth');
       }
     };
 
@@ -2022,11 +2009,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
       {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
       {showFeeds && <FeedsView onClose={() => setShowFeeds(false)} />}
-      <AddFeedModal
-        isOpen={showAddFeed}
-        onClose={() => setShowAddFeed(false)}
-        onSubmit={handleAddFeedSubmit}
-      />
       {failedImportsModal && (
         <FailedImportsDialog
           failedImports={failedImportsModal}

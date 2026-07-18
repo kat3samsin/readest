@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { fetchAndParseFeed } from '@/services/rss/feedClient';
 import { stubTranslation as _ } from '@/utils/misc';
-import type { ParsedFeed, RssFeed, RssFeedItem } from '@/types/rss';
+import type { ParsedFeed, RssFeed, RssFeedItem, RssFeedItemRef } from '@/types/rss';
 
 type Fetcher = (url: string) => Promise<ParsedFeed>;
 
@@ -12,18 +12,25 @@ interface FeedState {
   removeFeed: (id: string) => void;
   refreshFeed: (id: string, fetcher?: Fetcher) => Promise<void>;
   markItemRead: (feedId: string, itemId: string, read?: boolean) => void;
+  markItemsCrossPointSynced: (items: RssFeedItemRef[], syncedAt?: number) => void;
   unreadCount: (feedId: string) => number;
 }
 
 const mergeItems = (existing: RssFeedItem[], incoming: RssFeedItem[]): RssFeedItem[] => {
-  const readById = new Map(existing.map((i) => [i.id, i.read]));
   const known = new Map(existing.map((i) => [i.id, i]));
   const merged: RssFeedItem[] = [];
   for (const item of incoming) {
     if (!known.has(item.id)) merged.push({ ...item, read: false });
   }
   for (const item of incoming) {
-    if (known.has(item.id)) merged.push({ ...item, read: readById.get(item.id) ?? false });
+    const previous = known.get(item.id);
+    if (previous) {
+      merged.push({
+        ...item,
+        read: previous.read,
+        crossPointSyncedAt: previous.crossPointSyncedAt,
+      });
+    }
   }
   // Keep any previously-stored items the new fetch dropped (feeds truncate).
   for (const item of existing) {
@@ -88,6 +95,26 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           : f,
       ),
     })),
+  markItemsCrossPointSynced: (items, syncedAt = Date.now()) => {
+    const itemIdsByFeed = new Map<string, Set<string>>();
+    for (const item of items) {
+      const ids = itemIdsByFeed.get(item.feedId) ?? new Set<string>();
+      ids.add(item.itemId);
+      itemIdsByFeed.set(item.feedId, ids);
+    }
+    set((state) => ({
+      feeds: state.feeds.map((feed) => {
+        const itemIds = itemIdsByFeed.get(feed.id);
+        if (!itemIds) return feed;
+        return {
+          ...feed,
+          items: feed.items.map((item) =>
+            itemIds.has(item.id) ? { ...item, crossPointSyncedAt: syncedAt } : item,
+          ),
+        };
+      }),
+    }));
+  },
   unreadCount: (feedId) =>
     get()
       .feeds.find((f) => f.id === feedId)

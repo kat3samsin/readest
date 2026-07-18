@@ -16,6 +16,13 @@ export interface RssFeedItem {
   /** Hero image URL if present (enclosure / media:content / og image). */
   imageUrl?: string;
   read: boolean;
+  /** Last successful transfer of this article in a CrossPoint feed issue. */
+  crossPointSyncedAt?: number;
+}
+
+export interface RssFeedItemRef {
+  feedId: string;
+  itemId: string;
 }
 
 export interface RssFeed {

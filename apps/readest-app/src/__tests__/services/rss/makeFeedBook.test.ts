@@ -4,8 +4,7 @@ import { CFI } from '@/libs/document';
 import type { FeedManifest } from '@/services/rss/feedManifest';
 
 // Manifest with hash-style slots (non-sequential). Slot 7 is "older" (publishedAt earlier),
-// slot 42 is "newer" (publishedAt later). Entries are in manifest order (42 first, 7 second)
-// but should be sorted by date ascending in sections (7 first, 42 second).
+// slot 42 is "newer" (publishedAt later). The reader should show newest first.
 const manifest: FeedManifest = {
   feedUrl: 'u',
   title: 'Blog',
@@ -33,15 +32,14 @@ describe('makeFeedBook', () => {
   it('builds one section per entry with correct CFIs (slot != array index)', async () => {
     const book = await makeFeedBook(manifest, async (e) => `<p>body ${e.id}</p>`);
     expect(book.sections).toHaveLength(2);
-    // After date-ascending sort: slot-7 (C, older) is index 0, slot-42 (A, newer) is index 1
-    expect(book.sections[0]!.cfi).toBe(CFI.fake.fromIndex(7));
-    expect(book.sections[1]!.cfi).toBe(CFI.fake.fromIndex(42)); // slot 42, not index 1
+    expect(book.sections[0]!.cfi).toBe(CFI.fake.fromIndex(42));
+    expect(book.sections[1]!.cfi).toBe(CFI.fake.fromIndex(7));
     expect(book.metadata.title).toBe('Blog');
     const doc0 = await book.sections[0]!.createDocument();
-    expect(doc0.body.textContent).toContain('body c'); // C is slot-7, date-first
+    expect(doc0.body.textContent).toContain('body a');
   });
 
-  it('sorts sections by publishedAt ascending (entries with date before undated)', async () => {
+  it('sorts sections newest first and keeps undated entries last', async () => {
     const mixedManifest: FeedManifest = {
       feedUrl: 'u',
       title: 'Mixed',
@@ -66,24 +64,23 @@ describe('makeFeedBook', () => {
       ],
     };
     const book = await makeFeedBook(mixedManifest, async (e) => `<p>body ${e.id}</p>`);
-    expect(book.sections[0]!.id).toBe('300'); // older date first
-    expect(book.sections[1]!.id).toBe('100'); // newer date second
+    expect(book.sections[0]!.id).toBe('100');
+    expect(book.sections[1]!.id).toBe('300');
     expect(book.sections[2]!.id).toBe('200'); // undated last
   });
 
   it('resolveCFI resolves by slot id, not array index', async () => {
-    // slot-42 entry is at index 1 in manifest but becomes index 1 in sections too (after date sort),
-    // but the key test: slot-7 entry maps to sections[0] by content, not by slot number ordering.
+    // The key invariant is that resolution follows the stable slot, not its current array index.
     const book = await makeFeedBook(manifest, async (e) => `<p>body ${e.id}</p>`);
     const bookWithResolve = book as unknown as {
       resolveCFI: (c: string) => { index: number; anchor: (doc: Document) => unknown };
     };
     expect(typeof bookWithResolve.resolveCFI).toBe('function');
-    // slot-7 (C) is at array index 0 after date sort
+    // slot-7 (C) is at array index 1 after newest-first sorting.
     const result7 = bookWithResolve.resolveCFI(CFI.fake.fromIndex(7));
-    expect(result7.index).toBe(0);
-    // slot-42 (A) is at array index 1 after date sort
+    expect(result7.index).toBe(1);
+    // slot-42 (A) is at array index 0.
     const result42 = bookWithResolve.resolveCFI(CFI.fake.fromIndex(42));
-    expect(result42.index).toBe(1);
+    expect(result42.index).toBe(0);
   });
 });

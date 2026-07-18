@@ -14,6 +14,7 @@ import {
 } from './progressProtocol';
 import {
   planCrossPointProgressExchange,
+  preferCrossPointProgress,
   type CrossPointProgressConflict,
   type CrossPointProgressPlan,
 } from './progressPlanner';
@@ -54,6 +55,7 @@ interface RunCrossPointProgressSyncInput {
   books: Book[];
   manifest: CrossPointLibraryManifest;
   resolveXPointer: CrossPointSavedXPointerResolver;
+  preferCrossPointDocuments?: readonly string[];
 }
 
 class ProgressSyncError extends Error {
@@ -165,13 +167,16 @@ const scanBook = async (
     throw new ProgressSyncError('READ', reasonFor(error));
   }
   const wire = await readWire(input.provider, book.hash);
-  const plan = planCrossPointProgressExchange({
+  const planned = planCrossPointProgressExchange({
     document: book.hash,
     local: localAtStart,
     readest: wire.readest,
     crosspoint: wire.crosspoint,
     state,
   });
+  const plan = input.preferCrossPointDocuments?.includes(book.hash)
+    ? preferCrossPointProgress(planned)
+    : planned;
 
   if (changesLocalState(plan)) {
     const currentLocal = await loadPortablePosition(input.store, input.resolveXPointer, book);

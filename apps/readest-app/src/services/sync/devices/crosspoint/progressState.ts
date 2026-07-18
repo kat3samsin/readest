@@ -262,7 +262,9 @@ export const completePendingCrossPointProgress = async (
     throw new Error('CrossPoint pending progress changed before apply');
   }
   const { staleReadest: _staleReadest, ...withoutStaleReadest } = current;
-  const previousReadest = current.pendingCrosspoint.observedReadest;
+  // An explicit device-wins resolution may have recorded the exact stale wire
+  // publication separately from the locally observed pre-apply position.
+  const previousReadest = current.staleReadest ?? current.pendingCrosspoint.observedReadest;
   await store.save({
     ...withoutStaleReadest,
     baseline: { crosspointRevision, readest: appliedReadest },

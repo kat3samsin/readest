@@ -162,6 +162,26 @@ describe('CrossPoint progress protocol v2', () => {
     expect(JSON.parse(serialized).basedOnCrosspoint).toBeNull();
   });
 
+  test('accepts an intact legacy full-precision Readest sidecar', () => {
+    const percentage = 0.26307870051206633;
+    const legacy = {
+      schemaVersion: 2,
+      document: DOCUMENT,
+      xpointer: XPOINTER,
+      percentage,
+      revision: '0dc58236dbb529b34ecfd7d22035a758',
+      basedOnCrosspoint: CROSSPOINT_REVISION,
+    };
+
+    expect(parseReadestProgressSidecar(JSON.stringify(legacy), DOCUMENT)).toEqual(legacy);
+    expect(() =>
+      parseReadestProgressSidecar(
+        JSON.stringify({ ...legacy, revision: READEST_REVISION }),
+        DOCUMENT,
+      ),
+    ).toThrow('invalid Readest progress sidecar');
+  });
+
   test('returns null only for a missing sidecar and rejects malformed records', () => {
     expect(parseReadestProgressSidecar(null, DOCUMENT)).toBeNull();
     expect(parseCrossPointProgressSidecar(null, DOCUMENT)).toBeNull();

@@ -6,18 +6,17 @@ import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import {
-  normalizeCrossPointServerUrl,
-  probeCrossPointStatus,
   supportsCrossPointProgress,
   type CrossPointStatus,
 } from '@/services/sync/devices/crosspoint/client';
+import { connectCrossPoint } from '@/services/sync/devices/crosspoint/connect';
 import {
   runCrossPointBookSync,
   type CrossPointBookRunResult,
 } from '@/services/sync/devices/crosspoint/runBookSync';
+import type { CrossPointProgressConflict } from '@/services/sync/devices/crosspoint/progressPlanner';
 import { persistCrossPointHydratedBookMarkers } from '@/services/sync/devices/crosspoint/libraryMarker';
 import type { CrossPointBookSyncProgress } from '@/services/sync/devices/crosspoint/types';
-import type { CrossPointSettings } from '@/types/settings';
 import SubPageHeader from '../SubPageHeader';
 import { BoxedList, SectionTitle, SettingsRow, Tips } from '../primitives';
 
@@ -114,6 +113,7 @@ const CrossPointForm: React.FC<CrossPointFormProps> = ({ onBack }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<CrossPointBookSyncProgress | null>(null);
+  const [progressConflicts, setProgressConflicts] = useState<CrossPointProgressConflict[]>([]);
   const isDesktop = !!appService?.isDesktopApp;
 
   const header = (
@@ -138,73 +138,46 @@ const CrossPointForm: React.FC<CrossPointFormProps> = ({ onBack }) => {
 
   const handleConnect = async () => {
     if (isConnecting) return;
-    const normalized = normalizeCrossPointServerUrl(serverUrl);
-    if (!normalized) {
-      setNotice({ type: 'error', message: _('Enter a valid CrossPoint server address.') });
-      return;
-    }
-
     setIsConnecting(true);
     setNotice(null);
-    const connection: CrossPointSettings = {
-      serverUrl: normalized,
-      // The current CrossPoint server is unauthenticated. Keep the legacy
-      // transport fields empty instead of implying that they protect access.
-      username: '',
-      password: '',
-    };
     try {
-      const result = await probeCrossPointStatus(connection);
-      if (!result) {
+      const result = await connectCrossPoint(envConfig, serverUrl);
+      if (result.ok) {
+        setStatus(result.status);
+        setServerUrl(result.serverUrl);
+        setNotice({
+          type: 'info',
+          message: _('Connected to CrossPoint {{device}}.', { device: result.status.device }),
+        });
+      } else if (result.code === 'INVALID_ADDRESS') {
+        setNotice({ type: 'error', message: _('Enter a valid CrossPoint server address.') });
+      } else if (result.code === 'DEVICE_UNREACHABLE') {
         setNotice({
           type: 'error',
           message: _(
             'CrossPoint could not be reached. Check its address and make sure both devices are on the same network.',
           ),
         });
-        return;
-      }
-
-      setStatus(result.status);
-      if (!result.compatible) {
+      } else if (result.code === 'INCOMPATIBLE_FIRMWARE') {
+        setStatus(result.status ?? null);
         setNotice({
           type: 'error',
           message: _('This CrossPoint firmware does not support Readest book sync.'),
         });
-        return;
-      }
-
-      const latest = useSettingsStore.getState().settings;
-      const crosspoint: CrossPointSettings = {
-        ...latest.crosspoint,
-        ...connection,
-        device: result.status.device,
-      };
-      if (result.status.serial === undefined) {
-        delete crosspoint.serial;
       } else {
-        crosspoint.serial = result.status.serial;
+        setNotice({ type: 'error', message: _('Readest could not save this connection.') });
       }
-      const next = { ...latest, crosspoint };
-      await useSettingsStore.getState().saveSettings(envConfig, next);
-      useSettingsStore.getState().setSettings(next);
-      setServerUrl(normalized);
-      setNotice({
-        type: 'info',
-        message: _('Connected to CrossPoint {{device}}.', { device: result.status.device }),
-      });
-    } catch {
-      setNotice({ type: 'error', message: _('Readest could not save this connection.') });
     } finally {
       setIsConnecting(false);
     }
   };
 
-  const handleSync = async () => {
+  const handleSync = async (preferCrossPointDocuments: readonly string[] = []) => {
     if (isSyncing) return;
     setIsSyncing(true);
     setSyncProgress(null);
     setNotice(null);
+    setProgressConflicts([]);
     try {
       let { library, libraryLoaded } = useLibraryStore.getState();
       if (!libraryLoaded) {
@@ -218,10 +191,16 @@ const CrossPointForm: React.FC<CrossPointFormProps> = ({ onBack }) => {
         settings: useSettingsStore.getState().settings,
         books: library,
         onProgress: setSyncProgress,
+        preferCrossPointDocuments,
         persistHydratedBookMarkers: (markers) =>
           persistCrossPointHydratedBookMarkers(envConfig, markers),
       });
       if ('status' in result) setStatus(result.status);
+      if (result.code === 'PROGRESS_SYNC_PARTIAL') {
+        setProgressConflicts(
+          result.progress.sync.conflicts.filter((conflict) => conflict.crosspointWire),
+        );
+      }
       setNotice(syncResultNotice(_, result));
     } catch {
       setNotice({ type: 'error', message: _('Book sync failed. Check the reader and try again.') });
@@ -350,6 +329,35 @@ const CrossPointForm: React.FC<CrossPointFormProps> = ({ onBack }) => {
             </button>
           </SettingsRow>
         </BoxedList>
+
+        {progressConflicts.length > 0 && (
+          <BoxedList title={_('Progress conflicts')}>
+            {progressConflicts.map((conflict) => {
+              const conflictBook = useLibraryStore
+                .getState()
+                .library.find((book) => book.hash === conflict.document);
+              const title = conflictBook?.title || conflict.document.slice(0, 8);
+              return (
+                <SettingsRow
+                  key={conflict.document}
+                  label={title}
+                  description={_(
+                    'Readest and CrossPoint have different saved positions. Open the book after choosing to apply the CrossPoint position.',
+                  )}
+                >
+                  <button
+                    type='button'
+                    onClick={() => void handleSync([conflict.document])}
+                    disabled={isSyncing}
+                    className='btn btn-ghost btn-sm h-8 min-h-8 px-2'
+                  >
+                    {_('Use CrossPoint progress')}
+                  </button>
+                </SettingsRow>
+              );
+            })}
+          </BoxedList>
+        )}
 
         {notice && (
           <div

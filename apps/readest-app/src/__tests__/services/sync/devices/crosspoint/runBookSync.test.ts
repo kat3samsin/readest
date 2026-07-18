@@ -4,6 +4,7 @@ import type { Book } from '@/types/book';
 import type { SystemSettings } from '@/types/settings';
 import type { AppService } from '@/types/system';
 import type { EnvConfigType } from '@/services/environment';
+import { buildFeedBookUrl } from '@/services/rss/feedBookUrl';
 import type { CrossPointProbeResult } from '@/services/sync/devices/crosspoint/client';
 import type {
   CrossPointBookProvider,
@@ -364,13 +365,51 @@ describe('runCrossPointBookSync', () => {
         envConfig: harness.envConfig,
         settings: settings(),
         books: harness.books,
+        preferCrossPointDocuments: [HASH_A],
         persistHydratedBookMarkers: harness.persistHydratedBookMarkers,
       },
       harness.dependencies,
     );
 
     expect(harness.dependencies.syncProgress).toHaveBeenCalledOnce();
+    expect(harness.dependencies.syncProgress).toHaveBeenCalledWith(
+      expect.objectContaining({ preferCrossPointDocuments: [HASH_A] }),
+    );
     expect(result).toMatchObject({ ok: true, progress: { supported: true } });
+  });
+
+  test('keeps feed snapshots out of positional progress sync', async () => {
+    const progressStatus = {
+      ...status,
+      readestSync: {
+        protocol: 2 as const,
+        books: true as const,
+        progress: true,
+        highlights: false,
+      },
+    };
+    const feedBook = makeBook(HASH_B, {
+      url: buildFeedBookUrl('https://example.com/feed.xml'),
+      title: 'Example site',
+    });
+    const harness = makeHarness({
+      probe: { compatible: true, status: progressStatus },
+      books: [makeBook(HASH_A), feedBook],
+    });
+
+    await runCrossPointBookSync(
+      {
+        envConfig: harness.envConfig,
+        settings: settings(),
+        books: harness.books,
+        persistHydratedBookMarkers: harness.persistHydratedBookMarkers,
+      },
+      harness.dependencies,
+    );
+
+    expect(harness.dependencies.syncProgress).toHaveBeenCalledWith(
+      expect.objectContaining({ books: [harness.books[0]] }),
+    );
   });
 
   test('does not report success when progress has failures or conflicts', async () => {

@@ -25,17 +25,24 @@ const isExternalUri = (uri: string): boolean => /^(?:https?|mailto|tel):/i.test(
 
 type FeedSection = SectionItem & { load: () => string };
 
+export const sortFeedEntriesNewestFirst = (
+  entries: readonly FeedArticleEntry[],
+): FeedArticleEntry[] =>
+  [...entries].sort((a, b) => {
+    const aDate = a.publishedAt ? new Date(a.publishedAt).getTime() : Number.NaN;
+    const bDate = b.publishedAt ? new Date(b.publishedAt).getTime() : Number.NaN;
+    if (Number.isNaN(aDate)) return Number.isNaN(bDate) ? 0 : 1;
+    if (Number.isNaN(bDate)) return -1;
+    return bDate - aDate;
+  });
+
 export async function makeFeedBook(
   manifest: FeedManifest,
   loadArticleHtml: (entry: FeedArticleEntry) => Promise<string>,
 ): Promise<BookDoc> {
-  // Sort entries by publishedAt ascending; entries without a date go last,
-  // preserving their relative manifest order. Do NOT mutate manifest.entries.
-  const sortedEntries = [...manifest.entries].sort((a, b) => {
-    const aDate = a.publishedAt ? new Date(a.publishedAt).getTime() : Infinity;
-    const bDate = b.publishedAt ? new Date(b.publishedAt).getTime() : Infinity;
-    return aDate - bDate;
-  });
+  // Show newest articles first; entries without a valid date stay last in
+  // their manifest order. Do NOT mutate manifest.entries.
+  const sortedEntries = sortFeedEntriesNewestFirst(manifest.entries);
 
   const htmls = await Promise.all(sortedEntries.map((e) => loadArticleHtml(e)));
 

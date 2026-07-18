@@ -4,6 +4,7 @@ import type { AppService } from '@/types/system';
 import { isTauriAppPlatform, type EnvConfigType } from '@/services/environment';
 import { useSettingsStore } from '@/store/settingsStore';
 import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
+import { isFeedBookUrl } from '@/services/rss/feedBookUrl';
 import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
 import {
   normalizeCrossPointServerUrl,
@@ -16,6 +17,7 @@ import { sendCrossPointBooks } from './books';
 import { buildCrossPointBridgeKey, createCrossPointProgressStateStore } from './progressState';
 import { runCrossPointProgressSync, type CrossPointProgressSyncResult } from './progressSync';
 import { resolveCrossPointSavedXPointer } from './progressResolver';
+import { withCrossPointFeedSnapshots } from './feedBookStore';
 import type {
   CrossPointBookProvider,
   CrossPointBookStore,
@@ -54,6 +56,7 @@ export interface RunCrossPointBookSyncInput {
   settings: SystemSettings;
   books: Book[];
   onProgress?: (progress: CrossPointBookSyncProgress) => void;
+  preferCrossPointDocuments?: readonly string[];
   /**
    * Persist only this device-local field on the latest live library row.
    * The runner deliberately does not persist a downloaded Book snapshot,
@@ -121,7 +124,7 @@ const productionDependencies: CrossPointBookRunnerDependencies = {
   isNative: isTauriAppPlatform,
   probe: probeCrossPointStatus,
   createProvider: (settings) => createWebDAVProvider(settings),
-  createStore: (args) => createAppLocalStore(args),
+  createStore: (args) => withCrossPointFeedSnapshots(createAppLocalStore(args), args.appService),
   sendBooks: (args) => sendCrossPointBooks(args),
   syncProgress: (args) => runCrossPointProgressSync(args),
   now: () => Date.now(),
@@ -327,9 +330,13 @@ const runCrossPointBookSyncUnlocked = async (
         provider,
         stateStore: createCrossPointProgressStateStore(appService, bridgeKey),
         store,
-        books: input.books,
+        // A CrossPoint feed EPUB is a delivery snapshot, while Readest tracks
+        // the living book with stable feed-slot CFIs. Do not exchange the
+        // snapshot's positional progress with the living book.
+        books: input.books.filter((book) => !book.url || !isFeedBookUrl(book.url)),
         manifest: books.manifest,
         resolveXPointer: (book, config) => resolveCrossPointSavedXPointer(appService, book, config),
+        preferCrossPointDocuments: input.preferCrossPointDocuments,
       }),
     };
   }

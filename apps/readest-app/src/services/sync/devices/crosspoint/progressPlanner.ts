@@ -69,6 +69,29 @@ const fromReadestSidecar = (sidecar: ReadestProgressSidecar): PortableReadestPos
   percentage: sidecar.percentage,
 });
 
+/** Resolve one surfaced conflict only after the user explicitly chooses the device position. */
+export const preferCrossPointProgress = (plan: CrossPointProgressPlan): CrossPointProgressPlan => {
+  if (plan.kind !== 'CONFLICT' || !plan.conflict.crosspointWire) return plan;
+  const remote = plan.conflict.crosspointWire;
+  const { staleReadest: _staleReadest, ...state } = plan.state;
+  return {
+    kind: 'STAGE_CROSSPOINT',
+    remote,
+    state: {
+      ...state,
+      pendingCrosspoint: {
+        revision: remote.revision,
+        xpointer: remote.xpointer,
+        percentage: remote.percentage,
+        observedReadest: plan.conflict.local,
+      },
+      ...(plan.conflict.readestWire
+        ? { staleReadest: fromReadestSidecar(plan.conflict.readestWire) }
+        : {}),
+    },
+  };
+};
+
 const withoutStaleReadest = ({
   staleReadest: _staleReadest,
   ...state

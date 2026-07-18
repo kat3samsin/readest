@@ -222,6 +222,42 @@ describe('CrossPoint local causal progress state', () => {
     });
   });
 
+  test('preserves an explicitly recorded stale wire after a device-wins apply', async () => {
+    const { appService } = makeAppService();
+    const store = createCrossPointProgressStateStore(
+      appService,
+      'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    );
+    const observedReadest = buildPortableReadestPosition({
+      document: DOCUMENT,
+      xpointer: '/body/DocFragment[2]/body',
+      percentage: 0.2,
+    });
+    const staleWire = buildPortableReadestPosition({
+      document: DOCUMENT,
+      xpointer: '/body/DocFragment[1]/body',
+      percentage: 0.1,
+    });
+    await store.save({
+      ...state(),
+      staleReadest: staleWire,
+      pendingCrosspoint: { ...state().pendingCrosspoint!, observedReadest },
+    });
+    const applied = buildPortableReadestPosition({
+      document: DOCUMENT,
+      xpointer: '/body/DocFragment[3]/body',
+      percentage: 0.3,
+    });
+
+    await completePendingCrossPointProgress(store, DOCUMENT, CROSSPOINT_REVISION, applied);
+
+    expect(await store.load(DOCUMENT)).toMatchObject({
+      baseline: { crosspointRevision: CROSSPOINT_REVISION, readest: applied },
+      pendingCrosspoint: null,
+      staleReadest: staleWire,
+    });
+  });
+
   test('garbage-collects deleted book state and can clear one disconnected endpoint', async () => {
     const bridgeKey = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
     const keepPath = buildCrossPointProgressStatePath(bridgeKey, DOCUMENT);

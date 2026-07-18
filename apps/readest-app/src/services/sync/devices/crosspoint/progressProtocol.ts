@@ -80,6 +80,12 @@ export const computeReadestProgressRevision = ({
 }: PortablePositionInput): string =>
   md5(JSON.stringify([document, xpointer, Math.fround(percentage)]));
 
+const computeLegacyReadestProgressRevision = ({
+  document,
+  xpointer,
+  percentage,
+}: PortablePositionInput): string => md5(JSON.stringify([document, xpointer, percentage]));
+
 export const computeCrossPointProgressRevision = ({
   document,
   xpointer,
@@ -173,10 +179,20 @@ export const parseReadestProgressSidecar = (
     xpointer: parsed['xpointer'] as string,
     percentage: parsed['percentage'] as number,
   });
-  if (
-    parsed['revision'] !== expectedRevision ||
-    parsed['percentage'] !== Math.fround(parsed['percentage'] as number)
-  ) {
+  const percentage = parsed['percentage'] as number;
+  const isCanonical =
+    parsed['revision'] === expectedRevision && percentage === Math.fround(percentage);
+  // Early protocol-v2 builds hashed and serialized the full JS percentage.
+  // Accept only records whose legacy checksum is intact; the next successful
+  // publication rewrites them in the canonical Float32 form.
+  const isValidLegacy =
+    parsed['revision'] ===
+    computeLegacyReadestProgressRevision({
+      document: expectedDocument,
+      xpointer: parsed['xpointer'] as string,
+      percentage,
+    });
+  if (!isCanonical && !isValidLegacy) {
     throw new Error('invalid Readest progress sidecar');
   }
   return {
@@ -184,7 +200,7 @@ export const parseReadestProgressSidecar = (
     document: expectedDocument,
     revision: parsed['revision'] as string,
     xpointer: parsed['xpointer'] as string,
-    percentage: parsed['percentage'] as number,
+    percentage,
     basedOnCrosspoint,
   };
 };
