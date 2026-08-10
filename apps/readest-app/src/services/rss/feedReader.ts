@@ -75,10 +75,8 @@ export async function buildFeedBookDoc(
   });
 }
 
-// Stale-while-revalidate open: when the manifest already has entries, build
-// the BookDoc from local data immediately and refresh in the background
-// (new articles are persisted and appear on the next open). Only a first
-// open (empty manifest) blocks on the network — there is nothing to show yet.
+// Refresh before building so this open includes new articles. If the network
+// fails, keep the last saved manifest available for offline reading.
 export async function openFeedBookDoc(
   fs: FileSystem,
   feedHash: string,
@@ -88,19 +86,11 @@ export async function openFeedBookDoc(
 ): Promise<BookDoc> {
   const refresh = deps.refresh ?? refreshFeedManifest;
   const prev = await loadManifest(fs, feedHash, feedUrl, title);
-  if (prev.entries.length > 0) {
-    void refresh(fs, feedHash, feedUrl, title, deps).catch(() => {
-      // Background refresh failure is silent: the reader already has content
-      // and the next open retries.
-    });
-    return buildFeedBookDoc(fs, feedHash, prev);
-  }
   let manifest = prev;
   try {
     manifest = await refresh(fs, feedHash, feedUrl, title, deps);
   } catch {
-    // First-open fetch failed: fall through to the (empty) local manifest so
-    // the reader shows the book shell instead of crashing.
+    // Fall through to the saved manifest, which may be empty on first open.
   }
   return buildFeedBookDoc(fs, feedHash, manifest);
 }

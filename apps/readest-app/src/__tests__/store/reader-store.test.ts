@@ -3,6 +3,13 @@ import type { FoliateView } from '@/types/view';
 import type { Insets } from '@/types/misc';
 import type { ViewSettings } from '@/types/book';
 
+const isFeedBookUrl = vi.hoisted(() => vi.fn(() => false));
+const parseFeedBookUrl = vi.hoisted(() => vi.fn());
+const openFeedBookDoc = vi.hoisted(() => vi.fn());
+const computeBookNav = vi.hoisted(() => vi.fn(async () => ({ version: 1 })));
+const hydrateBookNav = vi.hoisted(() => vi.fn());
+const isBookNavCacheCurrent = vi.hoisted(() => vi.fn(() => false));
+
 vi.mock('@/store/bookDataStore', async () => {
   const { create } = await import('zustand');
   return {
@@ -40,7 +47,12 @@ vi.mock('@/utils/misc', () => ({
 }));
 
 // These are transitive imports needed by readerStore
-vi.mock('@/services/nav', () => ({ updateToc: vi.fn() }));
+vi.mock('@/services/nav', () => ({
+  computeBookNav,
+  hydrateBookNav,
+  isBookNavCacheCurrent,
+  updateToc: vi.fn(),
+}));
 vi.mock('@/utils/book', () => ({
   formatTitle: vi.fn((t: string) => t),
   getMetadataHash: vi.fn(() => 'hash'),
@@ -61,16 +73,17 @@ vi.mock('@/services/opds/pseStream', () => ({
   parsePseStreamFileName: vi.fn(),
 }));
 vi.mock('@/services/rss/feedBookUrl', () => ({
-  isFeedBookUrl: () => false,
-  parseFeedBookUrl: vi.fn(),
+  isFeedBookUrl,
+  parseFeedBookUrl,
 }));
 vi.mock('@/services/rss/feedReader', () => ({
-  openFeedBookDoc: vi.fn(),
+  openFeedBookDoc,
 }));
 
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { uniqueId } from '@/utils/misc';
+import { useLibraryStore } from '@/store/libraryStore';
 
 /**
  * Helper to seed a minimal ViewState in the store for a given key.
@@ -102,6 +115,8 @@ function seedViewState(key: string, overrides: Record<string, unknown> = {}) {
 
 describe('readerStore', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
+    isFeedBookUrl.mockReturnValue(false);
     useReaderStore.setState({
       viewStates: {},
       bookKeys: [],
@@ -116,6 +131,75 @@ describe('readerStore', () => {
       expect(state.viewStates).toEqual({});
       expect(state.bookKeys).toEqual([]);
       expect(state.hoveredBookKey).toBeNull();
+    });
+  });
+
+  describe('initViewState', () => {
+    test('rebuilds a living feed book instead of reusing its cached document', async () => {
+      const cachedBookDoc = {
+        metadata: { title: 'Old feed', language: 'en' },
+        rendition: { layout: 'reflowable' },
+        sections: [{ id: 'old-entry' }],
+      };
+      const refreshedBookDoc = {
+        metadata: { title: 'Current feed', language: 'en' },
+        rendition: { layout: 'reflowable' },
+        sections: [{ id: 'new-entry' }, { id: 'old-entry' }],
+      };
+      const feedBook = {
+        hash: 'feed-hash',
+        url: 'feed://site',
+        format: 'EPUB',
+        title: 'Site',
+        author: '',
+        createdAt: 1,
+        updatedAt: 1,
+      };
+      const appService = {
+        loadBookConfig: vi.fn(async () => ({ booknotes: [], viewSettings: {} })),
+        loadBookNav: vi.fn(async () => ({ version: 1, toc: [{ label: 'Stale entry' }] })),
+        saveBookNav: vi.fn(async () => {}),
+      };
+
+      isFeedBookUrl.mockReturnValue(true);
+      parseFeedBookUrl.mockReturnValue({ feedUrl: 'https://example.com/feed.xml' });
+      openFeedBookDoc.mockResolvedValue(refreshedBookDoc);
+      useLibraryStore.setState({
+        library: [feedBook],
+        getBookByHash: vi.fn(() => feedBook),
+      } as never);
+      useBookDataStore.setState({
+        booksData: {
+          'feed-hash': {
+            id: 'feed-hash',
+            book: feedBook,
+            file: null,
+            config: { booknotes: [], viewSettings: {} },
+            bookDoc: cachedBookDoc,
+            isFixedLayout: false,
+          },
+        },
+      } as never);
+
+      await useReaderStore
+        .getState()
+        .initViewState(
+          { getAppService: async () => appService } as never,
+          'feed-hash',
+          'feed-view',
+        );
+
+      expect(openFeedBookDoc).toHaveBeenCalledWith(
+        appService,
+        'feed-hash',
+        'https://example.com/feed.xml',
+        'Site',
+      );
+      expect(appService.loadBookNav).not.toHaveBeenCalled();
+      expect(computeBookNav).toHaveBeenCalledWith(refreshedBookDoc);
+      expect(hydrateBookNav).toHaveBeenCalledWith(refreshedBookDoc, { version: 1 });
+      expect(appService.saveBookNav).not.toHaveBeenCalled();
+      expect(useBookDataStore.getState().booksData['feed-hash']?.bookDoc).toBe(refreshedBookDoc);
     });
   });
 

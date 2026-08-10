@@ -74,24 +74,39 @@ describe('refreshFeedManifest', () => {
 
 type FeedArticleEntryLike = { id: string; link: string };
 
-describe('openFeedBookDoc (stale-while-revalidate)', () => {
-  it('opens instantly from a warm manifest without awaiting the refresh', async () => {
+describe('openFeedBookDoc', () => {
+  it('opens a warm feed with entries returned by the latest refresh', async () => {
     const fs = memFs();
-    // Seed: first refresh populates manifest + cache.
     await refreshFeedManifest(fs, 'fh', 'https://x/feed', 'Blog', {
       fetchAndParse: async () => parsed([{ id: 'a', contentHtml: `<p>${'x '.repeat(120)}</p>` }]),
     });
-    // Warm open: refresh hangs forever — open must still resolve.
-    let refreshStarted = false;
-    const never = new Promise<never>(() => {});
-    const doc = await openFeedBookDoc(fs, 'fh', 'https://x/feed', 'Blog', {
-      refresh: ((): Promise<never> => {
-        refreshStarted = true;
-        return never;
-      }) as unknown as typeof refreshFeedManifest,
+
+    const refresh = async () => ({
+      feedUrl: 'https://x/feed',
+      title: 'Blog',
+      entries: [
+        {
+          id: 'a',
+          slot: slotForArticleId('a'),
+          title: 'T-a',
+          link: 'https://x/a',
+          read: false,
+        },
+        {
+          id: 'b',
+          slot: slotForArticleId('b'),
+          title: 'T-b',
+          link: 'https://x/b',
+          read: false,
+        },
+      ],
+      lastFetchedAt: Date.now(),
     });
-    expect(refreshStarted).toBe(true); // background refresh fired
-    expect(doc.sections).toHaveLength(1); // built from local manifest
+    const doc = await openFeedBookDoc(fs, 'fh', 'https://x/feed', 'Blog', {
+      refresh,
+    });
+
+    expect(doc.sections).toHaveLength(2);
   });
 
   it('first open (empty manifest) awaits the fetch', async () => {
