@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { DEFAULT_CROSSPOINT_SETTINGS, DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import {
-  getCloudSyncProvider,
+  getCloudSyncProviders,
   isReadestCloudStorageActive,
 } from '@/services/sync/cloudSyncProvider';
 import { SETTINGS_WHITELIST } from '@/services/sync/adapters/settings';
@@ -30,7 +30,7 @@ describe('CrossPoint settings boundary', () => {
       },
     } as SystemSettings;
 
-    expect(getCloudSyncProvider(settings)).toBe('readest');
+    expect(getCloudSyncProviders(settings)).toEqual(['readest']);
     expect(isReadestCloudStorageActive(settings)).toBe(true);
   });
 
